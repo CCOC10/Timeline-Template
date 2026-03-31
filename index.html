@@ -1,0 +1,1776 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Timeline Template</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;600;700&display=swap');
+
+    html { font-size: calc(16px + 2pt); }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'IBM Plex Sans Thai', sans-serif;
+      background: #f5f7fa;
+      padding: 20px calc(36px + 20pt + 20px) 72px;
+    }
+
+    /* ── Upload area ── */
+    #upload-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      min-height: 260px;
+      border: 3px dashed #c5d0e0;
+      border-radius: 16px;
+      background: #fff;
+      margin: 40px auto;
+      max-width: 620px;
+      padding: 40px;
+      transition: border-color 0.2s, background 0.2s;
+      cursor: pointer;
+    }
+    #upload-area.dragover {
+      border-color: #4A90D9;
+      background: #eef4ff;
+    }
+    #upload-area i {
+      font-size: 3rem;
+      color: #4A90D9;
+    }
+    #upload-area h2 {
+      font-size: 1.1rem;
+      color: #3a4a6b;
+      font-weight: 600;
+    }
+    #upload-area p {
+      font-size: 0.72rem;
+      color: #8a9ab5;
+      text-align: center;
+      line-height: 1.6;
+    }
+    #upload-area .btn-upload {
+      padding: 10px 28px;
+      background: #4A90D9;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    #upload-area .btn-upload:hover { background: #3678c0; }
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .btn-demo {
+      padding: 8px 20px;
+      background: transparent;
+      color: #7a8899;
+      border: 1px solid #c5d0e0;
+      border-radius: 8px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'IBM Plex Sans Thai', sans-serif;
+      transition: background 0.15s, color 0.15s;
+    }
+    .btn-demo:hover { background: #f0f3f8; color: #3a4a6b; }
+    #file-input { display: none; }
+
+    /* ── Title ── */
+    .page-title {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .page-title h1 {
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: #1e2d4d;
+      letter-spacing: -0.3px;
+    }
+    .page-title p {
+      font-size: 0.82rem;
+      color: #7a8899;
+      margin-top: 4px;
+    }
+    .page-title p.sub2 {
+      font-size: 0.75rem;
+      color: #9aaabb;
+      margin-top: 3px;
+      font-style: italic;
+    }
+
+    /* ── Timeline section: CSS Grid ── */
+    .tl-section {
+      display: grid;
+      grid-template-rows: minmax(160px, auto) 46px minmax(160px, auto);
+      width: 100%;
+      margin-bottom: 16px;
+    }
+
+    .ev-cell-top {
+      display: flex;
+      flex-direction: column-reverse;
+      align-items: center;
+      gap: 3px;
+      min-width: 0;
+    }
+    .ev-cell-bot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .tl-bar-bg {
+      grid-row: 2;
+      display: flex;
+      border-radius: 4px;
+      overflow: hidden;
+      z-index: 1;
+    }
+    .tl-bar-seg { flex: 1; }
+
+    .tl-dot-cell {
+      grid-row: 2;
+      position: relative;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    .ev-dot {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid #fff;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.28);
+      pointer-events: all;
+    }
+
+    .ev-stem {
+      width: 2px;
+      height: 32px;
+      flex-shrink: 0;
+    }
+
+    .ev-circle {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .ev-circle:hover {
+      transform: scale(1.12);
+    }
+    .ev-circle i { font-size: 1.15rem; color: #fff; pointer-events: none; }
+
+    /* ── Icon Picker Popup ── */
+    #icon-picker {
+      display: none;
+      position: fixed;
+      z-index: 500;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+      padding: 10px;
+      width: 280px;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+    #icon-picker.open { display: block; }
+
+    #icon-picker .ip-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+      padding: 0 2px;
+    }
+    #icon-picker .ip-header input {
+      flex: 1;
+      padding: 6px 10px;
+      border: 1px solid #dde3ec;
+      border-radius: 6px;
+      font-size: 0.65rem;
+      font-family: 'IBM Plex Sans Thai', sans-serif;
+      outline: none;
+    }
+    #icon-picker .ip-header input:focus {
+      border-color: #4A90D9;
+    }
+    #icon-picker .ip-close {
+      width: 24px; height: 24px;
+      border: none; border-radius: 50%;
+      background: #f0f3f8; color: #666;
+      font-size: 0.7rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #icon-picker .ip-close:hover { background: #e0e4ea; }
+
+    #icon-picker .ip-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 4px;
+    }
+    #icon-picker .ip-item {
+      width: 40px; height: 40px;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      background: #f5f7fa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s, transform 0.12s;
+      font-size: 0.85rem;
+      color: #3a4a6b;
+    }
+    #icon-picker .ip-item:hover {
+      background: #e0ecff;
+      border-color: #4A90D9;
+      transform: scale(1.1);
+    }
+    #icon-picker .ip-item.active {
+      background: #4A90D9;
+      color: #fff;
+      border-color: #3678c0;
+    }
+    #icon-picker .ip-cat {
+      grid-column: 1 / -1;
+      font-size: 0.55rem;
+      color: #8a9ab5;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 6px 2px 2px;
+    }
+    #icon-picker .ip-cat:first-child { padding-top: 0; }
+
+    /* backdrop */
+    #icon-picker-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 499;
+    }
+    #icon-picker-backdrop.open { display: block; }
+
+    .ev-date {
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.3;
+      flex-shrink: 0;
+    }
+
+    .ev-desc {
+      font-size: 0.75rem;
+      color: #4a5568;
+      text-align: center;
+      line-height: 1.5;
+      padding: 3px 5px;
+      word-break: normal;
+      overflow-wrap: normal;
+      overflow: hidden;
+      cursor: default;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .ev-desc:hover {
+      border-color: rgba(0,0,0,0.15);
+      background: rgba(255,255,255,0.7);
+    }
+    .ev-desc:focus {
+      outline: none;
+      border-color: rgba(0,0,0,0.3);
+      background: #fff;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+    }
+    .ev-desc .nowrap { white-space: nowrap; }
+
+    /* ── Floating toggle button ── */
+    #ctrl-toggle {
+      position: fixed;
+      bottom: 16px; right: 16px;
+      z-index: 200;
+      display: none;
+      width: 42px; height: 42px;
+      border: none; border-radius: 50%;
+      background: rgba(58,74,107,0.85);
+      color: #fff;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 3px 14px rgba(0,0,0,0.2);
+      transition: background 0.15s, transform 0.2s;
+      align-items: center; justify-content: center;
+    }
+    #ctrl-toggle.visible { display: flex; opacity: 0; }
+    #ctrl-toggle.visible:hover { opacity: 1; }
+    #ctrl-toggle:hover { background: rgba(58,74,107,1); transform: scale(1.08); }
+    #ctrl-toggle.open { opacity: 1; background: #4A90D9; }
+    #ctrl-toggle i { pointer-events: none; }
+
+    /* ── Side panel (slides from right) ── */
+    #ctrl-panel {
+      position: fixed;
+      top: 0; right: 0; bottom: 0;
+      width: 220px;
+      z-index: 150;
+      background: rgba(255,255,255,0.98);
+      border-left: 1px solid #dde3ec;
+      box-shadow: -4px 0 20px rgba(0,0,0,0.08);
+      font-family: 'IBM Plex Sans Thai', sans-serif;
+      transform: translateX(100%);
+      transition: transform 0.25s ease;
+      overflow-y: auto;
+      padding: 16px 14px 80px;
+    }
+    #ctrl-panel.open { transform: translateX(0); }
+
+    #ctrl-panel .cp-title {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #3a4a6b;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    #ctrl-panel .cp-title button {
+      background: none; border: none;
+      color: #aab; font-size: 0.9rem;
+      cursor: pointer; padding: 2px;
+    }
+    #ctrl-panel .cp-title button:hover { color: #e85b5b; }
+
+    .ctrl-group {
+      display: flex;
+      flex-direction: column;
+      padding: 8px 0;
+      gap: 5px;
+      border-bottom: 1px solid #f0f3f8;
+    }
+    .ctrl-group:last-child { border-bottom: none; }
+
+    .ctrl-label {
+      font-size: 0.55rem;
+      color: #8a9ab5;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .ctrl-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    #ctrl-panel button.ctrl-btn {
+      width: 26px; height: 26px;
+      border: none; border-radius: 7px;
+      background: #f0f3f8; color: #3a4a6b;
+      font-size: 0.82rem; font-weight: 700;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s; flex-shrink: 0;
+    }
+    #ctrl-panel button.ctrl-btn:hover { background: #d8e4f5; }
+
+    .size-val {
+      font-size: 0.62rem; font-weight: 600;
+      color: #4A90D9; min-width: 32px; text-align: center;
+    }
+
+    #ctrl-panel input[type="color"] {
+      width: 22px; height: 22px;
+      border: 2px solid #dde3ec; border-radius: 50%;
+      padding: 0; cursor: pointer; flex-shrink: 0;
+      overflow: hidden; background: none;
+    }
+
+    #width-slider {
+      width: 100%;
+      accent-color: #4A90D9;
+      cursor: pointer;
+    }
+
+    /* ── Action buttons inside panel ── */
+    .cp-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-top: 10px;
+    }
+    .cp-actions button {
+      width: 100%;
+      padding: 8px 12px;
+      border: none; border-radius: 8px;
+      font-size: 0.65rem; font-weight: 600;
+      cursor: pointer;
+      font-family: 'IBM Plex Sans Thai', sans-serif;
+      transition: background 0.15s;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .cp-actions .btn-save {
+      background: #dbeafe; color: #2563eb;
+    }
+    .cp-actions .btn-save:hover { background: #bfdbfe; }
+    .cp-actions .btn-pdf {
+      background: #fef3c7; color: #b45309;
+    }
+    .cp-actions .btn-pdf:hover { background: #fde68a; }
+    .cp-actions .btn-save i,
+    .cp-actions .btn-pdf i,
+    .cp-actions .btn-load i,
+    .cp-actions .btn-reload i { font-size: 0.65rem; }
+    .cp-actions .btn-load {
+      background: #f0fdf4; color: #16a34a;
+    }
+    .cp-actions .btn-load:hover { background: #dcfce7; }
+    .cp-actions .btn-reload {
+      background: #fee2e2; color: #dc2626;
+    }
+    .cp-actions .btn-reload:hover { background: #fecaca; }
+
+    /* ── Editable title + subtitle ── */
+    .page-title h1[contenteditable],
+    .page-title p[contenteditable] {
+      border-radius: 4px;
+      border: 1px solid transparent;
+      transition: border-color 0.15s, background 0.15s;
+      outline: none;
+      cursor: default;
+    }
+    .page-title h1[contenteditable]:hover,
+    .page-title p[contenteditable]:hover {
+      border-color: rgba(0,0,0,0.12);
+      background: rgba(255,255,255,0.6);
+    }
+    .page-title h1[contenteditable]:focus,
+    .page-title p[contenteditable]:focus {
+      border-color: rgba(0,0,0,0.25);
+      background: #fff;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+    }
+
+    .ev-date[contenteditable] {
+      border-radius: 3px;
+      border: 1px solid transparent;
+      transition: border-color 0.15s, background 0.15s;
+      outline: none;
+      cursor: default;
+    }
+    .ev-date[contenteditable]:hover {
+      border-color: rgba(0,0,0,0.15);
+      background: rgba(255,255,255,0.5);
+    }
+    .ev-date[contenteditable]:focus {
+      border-color: rgba(0,0,0,0.25);
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    .footer-note {
+      text-align: center;
+      font-size: 0.72rem;
+      color: #aaa;
+      margin-top: 2px;
+    }
+
+    /* (reload button is now inside side panel) */
+
+    /* ── Print / PDF ── */
+    @media print {
+      @page { size: A4 landscape; margin: 8mm; }
+      html { font-size: 16px; }
+      body {
+        padding: 0;
+        background: #fff;
+        transform-origin: top left;
+      }
+      body.print-scaled {
+        /* scale set dynamically via JS */
+      }
+      #upload-area, #ctrl-toggle, #ctrl-panel,
+      #icon-picker, #icon-picker-backdrop { display: none !important; }
+      .ev-desc, .ev-date, .page-title h1, .page-title p {
+        border: none !important;
+        box-shadow: none !important;
+      }
+      .ev-circle { cursor: default; }
+      .ev-circle:hover { transform: none; }
+      .page-title { margin-bottom: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Upload Area -->
+<div id="upload-area">
+  <i class="fa-solid fa-file-excel"></i>
+  <h2>นำเข้าข้อมูลจากไฟล์ Excel / CSV</h2>
+  <p>ลากไฟล์ .xlsx หรือ .csv มาวางที่นี่ หรือคลิกเลือกไฟล์<br/>
+     คอลัมน์: <strong>NO</strong> | <strong>DATE</strong> | <strong>EVENT</strong></p>
+  <button class="btn-upload" onclick="document.getElementById('file-input').click()">เลือกไฟล์ Excel / CSV</button>
+  <div class="btn-row">
+    <button class="btn-demo" onclick="downloadTemplate()">ดาวน์โหลด Template</button>
+    <button class="btn-demo" onclick="document.getElementById('project-input').click()">เปิดงานเดิม (.json)</button>
+    <button class="btn-demo" onclick="loadDemo()">ดูตัวอย่าง Demo</button>
+  </div>
+  <input type="file" id="file-input" accept=".xlsx,.xls,.csv"/>
+</div>
+
+<!-- Title area (hidden until data loaded) -->
+<div class="page-title" id="page-title" style="display:none;">
+  <h1 contenteditable="true" data-id="title-h1">Timeline</h1>
+  <p contenteditable="true" data-id="title-sub">ลำดับเหตุการณ์</p>
+  <p contenteditable="true" data-id="title-sub2" class="sub2"></p>
+</div>
+
+<!-- Floating gear toggle -->
+<button id="ctrl-toggle" onclick="togglePanel()">
+  <i class="fa-solid fa-gear"></i>
+</button>
+
+<!-- Icon picker backdrop + popup -->
+<div id="icon-picker-backdrop"></div>
+<div id="icon-picker">
+  <div class="ip-header">
+    <input type="text" id="ip-search" placeholder="ค้นหาไอคอน..."/>
+    <button class="ip-close" id="ip-close">&times;</button>
+  </div>
+  <div class="ip-grid" id="ip-grid"></div>
+</div>
+
+<div id="root"></div>
+
+<!-- Side control panel -->
+<div id="ctrl-panel">
+  <div class="cp-title">
+    <span><i class="fa-solid fa-sliders"></i> ปรับแต่ง</span>
+    <button onclick="togglePanel()" title="ปิด">&times;</button>
+  </div>
+
+  <div class="ctrl-group">
+    <span class="ctrl-label">ข้อความ</span>
+    <div class="ctrl-row">
+      <button class="ctrl-btn" id="fs-dn" title="เล็กลง">A&minus;</button>
+      <span class="size-val" id="fs-val">&mdash;</span>
+      <button class="ctrl-btn" id="fs-up" title="ใหญ่ขึ้น">A+</button>
+      <input type="color" id="desc-clr" title="สีข้อความ"/>
+    </div>
+  </div>
+
+  <div class="ctrl-group">
+    <span class="ctrl-label">ความกว้าง</span>
+    <div class="ctrl-row">
+      <button class="ctrl-btn" id="w-dn" title="แคบลง">&minus;</button>
+      <span class="size-val" id="w-val">&mdash;</span>
+      <button class="ctrl-btn" id="w-up" title="กว้างขึ้น">+</button>
+    </div>
+    <input id="width-slider" type="range" min="60" max="2000" value="100"/>
+  </div>
+
+  <div class="ctrl-group">
+    <span class="ctrl-label">หัวข้อ</span>
+    <div class="ctrl-row">
+      <button class="ctrl-btn" id="h1-dn" title="เล็กลง">A&minus;</button>
+      <span class="size-val" id="h1-val">&mdash;</span>
+      <button class="ctrl-btn" id="h1-up" title="ใหญ่ขึ้น">A+</button>
+      <input type="color" id="h1-clr" title="สีหัวข้อ"/>
+    </div>
+  </div>
+
+  <div class="ctrl-group">
+    <span class="ctrl-label">หัวรอง</span>
+    <div class="ctrl-row">
+      <button class="ctrl-btn" id="sub-dn" title="เล็กลง">A&minus;</button>
+      <span class="size-val" id="sub-val">&mdash;</span>
+      <button class="ctrl-btn" id="sub-up" title="ใหญ่ขึ้น">A+</button>
+      <input type="color" id="sub-clr" title="สีหัวรอง"/>
+    </div>
+  </div>
+
+  <div class="ctrl-group">
+    <span class="ctrl-label">หัวรอง 2</span>
+    <div class="ctrl-row">
+      <button class="ctrl-btn" id="sub2-dn" title="เล็กลง">A&minus;</button>
+      <span class="size-val" id="sub2-val">&mdash;</span>
+      <button class="ctrl-btn" id="sub2-up" title="ใหญ่ขึ้น">A+</button>
+      <input type="color" id="sub2-clr" title="สีหัวรอง 2"/>
+    </div>
+  </div>
+
+  <div class="ctrl-group">
+    <span class="ctrl-label">วันที่</span>
+    <div class="ctrl-row">
+      <button class="ctrl-btn" id="dt-dn" title="เล็กลง">A&minus;</button>
+      <span class="size-val" id="dt-val">&mdash;</span>
+      <button class="ctrl-btn" id="dt-up" title="ใหญ่ขึ้น">A+</button>
+    </div>
+  </div>
+
+  <div class="ctrl-group" style="display:none;">
+    <span class="ctrl-label">คอลัมน์/แถว</span>
+    <div class="ctrl-row">
+      <button class="ctrl-btn" id="cols-dn" title="ลดคอลัมน์">&minus;</button>
+      <span class="size-val" id="cols-val">&mdash;</span>
+      <button class="ctrl-btn" id="cols-up" title="เพิ่มคอลัมน์">+</button>
+    </div>
+  </div>
+
+  <div class="cp-actions">
+    <button class="btn-pdf" id="btn-pdf" onclick="exportPDF()">
+      <i class="fa-solid fa-file-pdf"></i> บันทึก PDF
+    </button>
+    <button class="btn-save" onclick="exportProject()">
+      <i class="fa-solid fa-floppy-disk"></i> บันทึกงาน
+    </button>
+    <button class="btn-load" onclick="document.getElementById('project-input').click()">
+      <i class="fa-solid fa-folder-open"></i> เปิดงานเดิม
+    </button>
+    <input type="file" id="project-input" accept=".json" style="display:none"/>
+    <button class="btn-reload" id="reload-btn" onclick="clearSession().then(() => location.reload())">
+      <i class="fa-solid fa-rotate-left"></i> โหลดไฟล์ใหม่
+    </button>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   IndexedDB Persistence Layer
+   - DB: TimelineDB, Store: sessions
+   - Auto-save on every change (debounced 500ms)
+   - Auto-restore last session on page load
+   - Auto-cleanup: sessions older than 30 days
+   - Quota guard: keeps total under 80% of quota
+   ═══════════════════════════════════════════════════ */
+const DB_NAME    = 'TimelineDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'sessions';
+const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; /* 30 days */
+const QUOTA_THRESHOLD = 0.8; /* 80% */
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+function dbPut(db, data) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).put(data);
+    tx.oncomplete = resolve;
+    tx.onerror    = () => reject(tx.error);
+  });
+}
+
+function dbGet(db, id) {
+  return new Promise((resolve, reject) => {
+    const tx  = db.transaction(STORE_NAME, 'readonly');
+    const req = tx.objectStore(STORE_NAME).get(id);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+function dbGetAll(db) {
+  return new Promise((resolve, reject) => {
+    const tx  = db.transaction(STORE_NAME, 'readonly');
+    const req = tx.objectStore(STORE_NAME).getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+function dbDelete(db, id) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).delete(id);
+    tx.oncomplete = resolve;
+    tx.onerror    = () => reject(tx.error);
+  });
+}
+
+/* ── Auto-cleanup: remove expired sessions + quota guard ── */
+async function autoCleanup(db) {
+  const all = await dbGetAll(db);
+  const now = Date.now();
+  let deleted = 0;
+
+  /* 1) Remove sessions older than MAX_AGE */
+  for (const session of all) {
+    if (session.savedAt && (now - session.savedAt) > MAX_AGE_MS) {
+      await dbDelete(db, session.id);
+      deleted++;
+    }
+  }
+
+  /* 2) Quota guard — if storage > 80%, remove oldest sessions */
+  if (navigator.storage && navigator.storage.estimate) {
+    const est = await navigator.storage.estimate();
+    if (est.quota && est.usage) {
+      const ratio = est.usage / est.quota;
+      if (ratio > QUOTA_THRESHOLD) {
+        const remaining = await dbGetAll(db);
+        remaining.sort((a, b) => (a.savedAt || 0) - (b.savedAt || 0));
+        /* Remove oldest half */
+        const toRemove = Math.max(1, Math.floor(remaining.length / 2));
+        for (let i = 0; i < toRemove; i++) {
+          await dbDelete(db, remaining[i].id);
+          deleted++;
+        }
+      }
+    }
+  }
+
+  if (deleted > 0) console.log(`[TimelineDB] Cleaned up ${deleted} expired session(s)`);
+}
+
+/* ── Save current state (debounced) ── */
+let _saveTimer = null;
+const SESSION_ID = 'current';
+
+function scheduleSave() {
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => saveState(), 500);
+}
+
+async function saveState() {
+  try {
+    const db = await openDB();
+    const titleH1  = document.querySelector('#page-title h1');
+    const titleSub = document.querySelector('#page-title p');
+    const titleSub2 = document.querySelector('#page-title p.sub2');
+
+    /* Capture current desc/date text from DOM */
+    const eventsSnapshot = allEvents.map((ev, idx) => {
+      const descEl = document.querySelector(`[data-id="desc-${Math.floor(idx / COLS)}-${idx % COLS}"]`);
+      const dateEl = document.querySelector(`[data-id="date-${Math.floor(idx / COLS)}-${idx % COLS}"]`);
+      return {
+        date: dateEl ? dateEl.textContent : ev.date,
+        desc: descEl ? descEl.textContent : ev.desc,
+        icon: ev.icon,
+      };
+    });
+
+    const data = {
+      id: SESSION_ID,
+      savedAt: Date.now(),
+      events: eventsSnapshot,
+      cols: COLS,
+      title: titleH1 ? titleH1.textContent : '',
+      subtitle: titleSub ? titleSub.textContent : '',
+      subtitle2: titleSub2 ? titleSub2.textContent : '',
+      settings: gatherSettings(),
+    };
+
+    await dbPut(db, data);
+    db.close();
+  } catch (e) {
+    console.warn('[TimelineDB] Save failed:', e);
+  }
+}
+
+function gatherSettings() {
+  return {
+    descFS:  document.querySelector('.ev-desc')?.style.fontSize || '',
+    descW:   document.querySelector('.ev-desc')?.style.width || '',
+    descClr: document.getElementById('desc-clr')?.value || '#4a5568',
+    h1FS:    document.querySelector('#page-title h1')?.style.fontSize || '',
+    h1Clr:   document.getElementById('h1-clr')?.value || '#1e2d4d',
+    subFS:   document.querySelector('#page-title p')?.style.fontSize || '',
+    subClr:  document.getElementById('sub-clr')?.value || '#7a8899',
+    sub2FS:  document.querySelector('#page-title p.sub2')?.style.fontSize || '',
+    sub2Clr: document.getElementById('sub2-clr')?.value || '#9aaabb',
+    dtFS:    document.querySelector('.ev-date')?.style.fontSize || '',
+  };
+}
+
+/* ── Restore last session ── */
+async function tryRestore() {
+  try {
+    const db = await openDB();
+    await autoCleanup(db);
+    const session = await dbGet(db, SESSION_ID);
+    db.close();
+
+    if (!session || !session.events || session.events.length === 0) return false;
+
+    /* Check if session is expired */
+    if (session.savedAt && (Date.now() - session.savedAt) > MAX_AGE_MS) return false;
+
+    allEvents = session.events;
+    COLS = session.cols || 18;
+
+    document.querySelector('#page-title h1').textContent = session.title || 'Timeline';
+    document.querySelector('#page-title p').textContent = session.subtitle || '';
+    document.querySelector('#page-title p.sub2').textContent = session.subtitle2 || '';
+
+    document.getElementById('upload-area').style.display = 'none';
+    document.getElementById('page-title').style.display = 'block';
+    document.getElementById('ctrl-toggle').classList.add('visible');
+
+    renderTimeline();
+
+    /* Restore settings after render */
+    if (session.settings) restoreSettings(session.settings);
+
+    console.log(`[TimelineDB] Restored session (${allEvents.length} events, saved ${new Date(session.savedAt).toLocaleString('th-TH')})`);
+    return true;
+  } catch (e) {
+    console.warn('[TimelineDB] Restore failed:', e);
+    return false;
+  }
+}
+
+function restoreSettings(s) {
+  const allDesc  = Array.from(document.querySelectorAll('.ev-desc'));
+  const allDates = Array.from(document.querySelectorAll('.ev-date'));
+  const titleH1  = document.querySelector('#page-title h1');
+  const titleSub = document.querySelector('#page-title p');
+  const titleSub2 = document.querySelector('#page-title p.sub2');
+
+  if (s.descFS) allDesc.forEach(el => el.style.fontSize = s.descFS);
+  if (s.descW)  allDesc.forEach(el => el.style.width = s.descW);
+  if (s.descClr) {
+    allDesc.forEach(el => el.style.color = s.descClr);
+    document.getElementById('desc-clr').value = s.descClr;
+  }
+  if (s.h1FS && titleH1) titleH1.style.fontSize = s.h1FS;
+  if (s.h1Clr && titleH1) {
+    titleH1.style.color = s.h1Clr;
+    document.getElementById('h1-clr').value = s.h1Clr;
+  }
+  if (s.subFS && titleSub) titleSub.style.fontSize = s.subFS;
+  if (s.subClr && titleSub) {
+    titleSub.style.color = s.subClr;
+    document.getElementById('sub-clr').value = s.subClr;
+  }
+  if (s.sub2FS && titleSub2) titleSub2.style.fontSize = s.sub2FS;
+  if (s.sub2Clr && titleSub2) {
+    titleSub2.style.color = s.sub2Clr;
+    document.getElementById('sub2-clr').value = s.sub2Clr;
+  }
+  if (s.dtFS) allDates.forEach(el => el.style.fontSize = s.dtFS);
+
+  /* Sync control bar display values */
+  const fsVal = document.getElementById('fs-val');
+  const wVal  = document.getElementById('w-val');
+  const h1Val = document.getElementById('h1-val');
+  const subVal = document.getElementById('sub-val');
+  const sub2Val = document.getElementById('sub2-val');
+  const dtVal = document.getElementById('dt-val');
+  if (s.descFS) fsVal.textContent = s.descFS;
+  if (s.descW)  wVal.textContent = s.descW;
+  if (s.h1FS)   h1Val.textContent = s.h1FS;
+  if (s.subFS)  subVal.textContent = s.subFS;
+  if (s.sub2FS) sub2Val.textContent = s.sub2FS;
+  if (s.dtFS)   dtVal.textContent = s.dtFS;
+}
+
+/* ── Clear session (used by reload button) ── */
+async function clearSession() {
+  try {
+    const db = await openDB();
+    await dbDelete(db, SESSION_ID);
+    db.close();
+    console.log('[TimelineDB] Session cleared');
+  } catch (e) { /* ignore */ }
+}
+
+/* ══════════════════════════════════════════════════ */
+
+/* ── Color palette ── */
+const palette = [
+  "#4A90D9","#4BC5A2","#7BC942","#F5C842","#E85B5B",
+  "#3D4E6B","#9B59B6","#E67E22","#1ABC9C","#C0392B"
+];
+
+/* ── Icon auto-assign based on keywords ── */
+const iconRules = [
+  { kw: ['ตรวจสอบ','ตรวจ'],                       icon: 'fa-magnifying-glass' },
+  { kw: ['บก.ป.','กก.1','รับข้อเท็จจริง'],         icon: 'fa-building-shield' },
+  { kw: ['คำร้องทุกข์','ร้องทุกข์'],                icon: 'fa-file-signature' },
+  { kw: ['สอบปากคำ','สอบพยาน'],                    icon: 'fa-comments' },
+  { kw: ['เพิ่มเติม','สอบเพิ่ม'],                  icon: 'fa-rotate-right' },
+  { kw: ['ศ.พิเศษ','ศ.กิตติคุณ','รศ.','ผศ.'],     icon: 'fa-user-graduate' },
+  { kw: ['หนังสือ','เอกสาร','ชี้แจง','ทำหนังสือ'], icon: 'fa-file-pen' },
+  { kw: ['ฟอกเงิน','ปปง'],                         icon: 'fa-money-bill-transfer' },
+  { kw: ['หารือ','อัยการ','ศาล'],                   icon: 'fa-scale-balanced' },
+  { kw: ['แจ้งข้อกล่าวหา','ข้อกล่าวหา'],           icon: 'fa-triangle-exclamation' },
+  { kw: ['ถอนคำร้อง','ถอน'],                        icon: 'fa-xmark-circle' },
+  { kw: ['พระ','วัด','ธรรม'],                       icon: 'fa-dharmachakra' },
+  { kw: ['บริษัท','ตัวแทน','นิติบุคคล'],            icon: 'fa-building' },
+  { kw: ['รถ','ยานพาหนะ','เช่ารถ'],                 icon: 'fa-car' },
+  { kw: ['เลื่อน','ขยาย','เปลี่ยนแปลง'],           icon: 'fa-calendar-xmark' },
+  { kw: ['ยื่น','ส่ง','นำส่ง'],                     icon: 'fa-file-lines' },
+  { kw: ['มูลนิธิ','กรรมการ'],                      icon: 'fa-people-group' },
+];
+
+function autoIcon(desc) {
+  const d = (desc || '').toLowerCase();
+  for (const rule of iconRules) {
+    for (const kw of rule.kw) {
+      if (d.includes(kw.toLowerCase())) return rule.icon;
+    }
+  }
+  return 'fa-circle-dot';
+}
+
+/* ── Wrap Thai names to prevent line-break ── */
+function wrapNames(str) {
+  const N = '\u00A0';
+  let s = str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const W = (t) => `<span class="nowrap">${t}</span>`;
+  s = s.replace(/(ศ\.กิตติคุณ|ศ\.พิเศษ)\s+(\S+)\s+(\S+)/g, (_,p,f,l) => W(`${p}${N}${f}${N}${l}`));
+  s = s.replace(/(นางสาว)\s+(\S+)\s+(\S+)/g, (_,p,f,l) => W(`${p}${N}${f}${N}${l}`));
+  s = s.replace(/(นาย|นาง)\s+(\S+)\s+(\S+)/g, (_,p,f,l) => W(`${p}${N}${f}${N}${l}`));
+  s = s.replace(/(นาย|นาง)\s+(\S+)/g, (_,p,f) => W(`${p}${N}${f}`));
+  s = s.replace(/((?:น\.ส\.|รศ\.)\S+)\s+(\S+)/g, (_,pf,l) => W(`${pf}${N}${l}`));
+  s = s.replace(/(พระ(?:ครูปลัด|ปลัด|ครู)\S+)(?:\s+([^\s\/\(]+))?/g, (_,m,x) => x ? W(`${m}${N}${x}`) : W(m));
+  return s;
+}
+
+/* ── Icon catalog for picker ── */
+const iconCatalog = [
+  { cat: 'ทั่วไป', icons: [
+    'fa-circle-dot','fa-circle-check','fa-circle-xmark','fa-circle-info',
+    'fa-circle-exclamation','fa-circle-question','fa-star','fa-heart',
+    'fa-flag','fa-bookmark','fa-bell','fa-clock',
+    'fa-calendar','fa-calendar-check','fa-calendar-xmark','fa-calendar-days',
+    'fa-thumbs-up','fa-thumbs-down','fa-check','fa-xmark',
+  ]},
+  { cat: 'เอกสาร / สำนวน', icons: [
+    'fa-file','fa-file-lines','fa-file-pen','fa-file-signature',
+    'fa-file-contract','fa-file-shield','fa-file-export','fa-file-import',
+    'fa-file-circle-check','fa-file-circle-xmark','fa-folder','fa-folder-open',
+    'fa-clipboard','fa-clipboard-check','fa-paste','fa-pen-to-square',
+  ]},
+  { cat: 'กฎหมาย / สอบสวน', icons: [
+    'fa-scale-balanced','fa-gavel','fa-handcuffs','fa-shield-halved',
+    'fa-magnifying-glass','fa-building-shield','fa-user-shield','fa-eye',
+    'fa-fingerprint','fa-id-card','fa-id-badge','fa-stamp',
+    'fa-triangle-exclamation','fa-ban','fa-lock','fa-unlock',
+  ]},
+  { cat: 'บุคคล / องค์กร', icons: [
+    'fa-user','fa-user-tie','fa-user-graduate','fa-users',
+    'fa-people-group','fa-person','fa-comments','fa-comment',
+    'fa-comment-dots','fa-phone','fa-envelope','fa-at',
+    'fa-building','fa-building-columns','fa-landmark','fa-city',
+  ]},
+  { cat: 'การเงิน / ธุรกรรม', icons: [
+    'fa-money-bill','fa-money-bill-transfer','fa-money-bill-wave','fa-money-check',
+    'fa-coins','fa-wallet','fa-credit-card','fa-piggy-bank',
+    'fa-sack-dollar','fa-hand-holding-dollar','fa-chart-line','fa-chart-bar',
+    'fa-chart-pie','fa-receipt','fa-calculator','fa-percent',
+  ]},
+  { cat: 'ศาสนา / วัฒนธรรม', icons: [
+    'fa-dharmachakra','fa-om','fa-pray','fa-hands-praying',
+    'fa-church','fa-place-of-worship','fa-dove','fa-cross',
+    'fa-yin-yang','fa-peace','fa-spa','fa-candle-holder',
+  ]},
+  { cat: 'ขนส่ง / สถานที่', icons: [
+    'fa-car','fa-truck','fa-bus','fa-plane',
+    'fa-ship','fa-motorcycle','fa-bicycle','fa-taxi',
+    'fa-house','fa-hospital','fa-school','fa-store',
+    'fa-map-marker-alt','fa-location-dot','fa-route','fa-road',
+  ]},
+  { cat: 'สถานะ / ดำเนินการ', icons: [
+    'fa-rotate-right','fa-arrow-right','fa-arrow-left','fa-arrows-rotate',
+    'fa-play','fa-pause','fa-stop','fa-forward',
+    'fa-hourglass-half','fa-spinner','fa-bolt','fa-fire',
+    'fa-explosion','fa-wand-magic-sparkles','fa-gear','fa-wrench',
+  ]},
+  { cat: 'สื่อสาร / เทคโนโลยี', icons: [
+    'fa-laptop','fa-desktop','fa-mobile-screen','fa-print',
+    'fa-camera','fa-video','fa-microphone','fa-headset',
+    'fa-wifi','fa-globe','fa-database','fa-server',
+    'fa-cloud','fa-download','fa-upload','fa-share-nodes',
+  ]},
+];
+
+/* ── Icon Picker logic ── */
+let pickerTarget = null; /* { eventIndex, circleEl } */
+const pickerEl    = document.getElementById('icon-picker');
+const pickerGrid  = document.getElementById('ip-grid');
+const pickerSearch = document.getElementById('ip-search');
+const pickerBackdrop = document.getElementById('icon-picker-backdrop');
+
+function buildPickerGrid(filter) {
+  pickerGrid.innerHTML = '';
+  const q = (filter || '').toLowerCase();
+  iconCatalog.forEach(cat => {
+    const filtered = cat.icons.filter(ic => !q || ic.includes(q));
+    if (filtered.length === 0) return;
+    const catEl = document.createElement('div');
+    catEl.className = 'ip-cat';
+    catEl.textContent = cat.cat;
+    pickerGrid.appendChild(catEl);
+    filtered.forEach(ic => {
+      const item = document.createElement('div');
+      item.className = 'ip-item';
+      if (pickerTarget && allEvents[pickerTarget.eventIndex].icon === ic) {
+        item.classList.add('active');
+      }
+      item.innerHTML = `<i class="fa-solid ${ic}"></i>`;
+      item.addEventListener('click', () => selectIcon(ic));
+      pickerGrid.appendChild(item);
+    });
+  });
+}
+
+function openPicker(eventIndex, circleEl) {
+  pickerTarget = { eventIndex, circleEl };
+  buildPickerGrid('');
+  pickerSearch.value = '';
+
+  /* Position near the circle */
+  const rect = circleEl.getBoundingClientRect();
+  let top = rect.bottom + 8;
+  let left = rect.left - 110;
+  if (left < 10) left = 10;
+  if (left + 280 > window.innerWidth) left = window.innerWidth - 290;
+  if (top + 320 > window.innerHeight) top = rect.top - 328;
+  if (top < 10) top = 10;
+
+  pickerEl.style.top = top + 'px';
+  pickerEl.style.left = left + 'px';
+  pickerEl.classList.add('open');
+  pickerBackdrop.classList.add('open');
+  setTimeout(() => pickerSearch.focus(), 50);
+}
+
+function closePicker() {
+  pickerEl.classList.remove('open');
+  pickerBackdrop.classList.remove('open');
+  pickerTarget = null;
+}
+
+function selectIcon(iconClass) {
+  if (!pickerTarget) return;
+  const ev = allEvents[pickerTarget.eventIndex];
+  ev.icon = iconClass;
+  const ico = pickerTarget.circleEl.querySelector('i');
+  ico.className = `fa-solid ${iconClass}`;
+  closePicker();
+  scheduleSave();
+}
+
+pickerBackdrop.addEventListener('click', closePicker);
+document.getElementById('ip-close').addEventListener('click', closePicker);
+pickerSearch.addEventListener('input', () => buildPickerGrid(pickerSearch.value));
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && pickerEl.classList.contains('open')) closePicker();
+});
+
+/* ── State ── */
+let allEvents = [];
+let COLS = 18;
+
+/* ── Render timeline ── */
+function renderTimeline() {
+  const root = document.getElementById('root');
+  root.innerHTML = '';
+
+  const rows = [];
+  for (let i = 0; i < allEvents.length; i += COLS) {
+    rows.push(allEvents.slice(i, i + COLS));
+  }
+
+  rows.forEach((rowEvents, r) => {
+    const N = rowEvents.length;
+    const section = document.createElement('div');
+    section.className = 'tl-section';
+    section.style.gridTemplateColumns = `repeat(${N}, 1fr)`;
+
+    const barBg = document.createElement('div');
+    barBg.className = 'tl-bar-bg';
+    barBg.style.gridColumn = `1 / ${N + 1}`;
+    section.appendChild(barBg);
+
+    rowEvents.forEach((ev, i) => {
+      const gi  = (r * COLS + i) % palette.length;
+      const col = palette[gi];
+      const isAbove = (i % 2 === 0);
+      const gcol = i + 1;
+
+      const seg = document.createElement('div');
+      seg.className = 'tl-bar-seg';
+      seg.style.background = col;
+      barBg.appendChild(seg);
+
+      const dotCell = document.createElement('div');
+      dotCell.className = 'tl-dot-cell';
+      dotCell.style.gridColumn = gcol;
+      const dot = document.createElement('div');
+      dot.className = 'ev-dot';
+      dot.style.borderColor = col;
+      dotCell.appendChild(dot);
+      section.appendChild(dotCell);
+
+      const stem = document.createElement('div');
+      stem.className = 'ev-stem';
+      stem.style.background = col;
+
+      const circle = document.createElement('div');
+      circle.className = 'ev-circle';
+      circle.style.background = col;
+      circle.style.boxShadow = `0 4px 12px ${col}55`;
+      circle.title = 'คลิกเพื่อเปลี่ยนไอคอน';
+      const evIdx = r * COLS + i;
+      circle.addEventListener('click', () => openPicker(evIdx, circle));
+      const ico = document.createElement('i');
+      ico.className = `fa-solid ${ev.icon}`;
+      circle.appendChild(ico);
+
+      const dateEl = document.createElement('div');
+      dateEl.className = 'ev-date';
+      dateEl.contentEditable = 'true';
+      dateEl.dataset.id = `date-${r}-${i}`;
+      dateEl.style.color = col;
+      dateEl.textContent = ev.date;
+
+      const descEl = document.createElement('div');
+      descEl.className = 'ev-desc';
+      descEl.contentEditable = 'true';
+      descEl.dataset.id = `desc-${r}-${i}`;
+      descEl.innerHTML = wrapNames(ev.desc);
+
+      const cell = document.createElement('div');
+      cell.className = isAbove ? 'ev-cell-top' : 'ev-cell-bot';
+      cell.style.gridColumn = gcol;
+      cell.style.gridRow    = isAbove ? '1' : '3';
+      cell.appendChild(stem);
+      cell.appendChild(circle);
+      cell.appendChild(dateEl);
+      cell.appendChild(descEl);
+      section.appendChild(cell);
+    });
+
+    root.appendChild(section);
+  });
+
+  initControls();
+}
+
+/* ── Download Excel template ── */
+function downloadTemplate() {
+  const wb = XLSX.utils.book_new();
+  const data = [
+    ['NO', 'DATE', 'EVENT'],
+    [1, '1 ม.ค. 2568', 'ตัวอย่างเหตุการณ์ที่ 1'],
+    [2, '15 ม.ค. 2568', 'ตัวอย่างเหตุการณ์ที่ 2'],
+    [3, '1 ก.พ. 2568', 'ตัวอย่างเหตุการณ์ที่ 3'],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{ wch: 6 }, { wch: 18 }, { wch: 60 }];
+  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+  XLSX.writeFile(wb, 'TIMELINE_TEMPLATE.xlsx');
+}
+
+/* ── Read Excel / CSV file ── */
+function processFile(file) {
+  const isCSV = /\.csv$/i.test(file.name);
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    let workbook;
+    if (isCSV) {
+      workbook = XLSX.read(e.target.result, { type: 'string' });
+    } else {
+      const data = new Uint8Array(e.target.result);
+      workbook = XLSX.read(data, { type: 'array' });
+    }
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const json = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+    if (json.length === 0) {
+      alert('ไม่พบข้อมูลในไฟล์ กรุณาตรวจสอบว่ามีคอลัมน์ NO, DATE, EVENT');
+      return;
+    }
+
+    /* Map columns — try common header names */
+    const firstRow = json[0];
+    const keys = Object.keys(firstRow);
+
+    let dateKey = keys.find(k => /^date$/i.test(k.trim())) || keys.find(k => /date|วันที่/i.test(k)) || keys[1];
+    let eventKey = keys.find(k => /^event$/i.test(k.trim())) || keys.find(k => /event|เหตุการณ์|รายละเอียด/i.test(k)) || keys[2];
+
+    allEvents = json
+      .filter(row => row[dateKey] || row[eventKey])
+      .map(row => ({
+        date: String(row[dateKey] || '').trim(),
+        desc: String(row[eventKey] || '').trim(),
+        icon: autoIcon(String(row[eventKey] || ''))
+      }));
+
+    if (allEvents.length === 0) {
+      alert('ไม่พบข้อมูลที่ใช้ได้ในไฟล์ กรุณาตรวจสอบคอลัมน์ DATE และ EVENT');
+      return;
+    }
+
+    /* Auto-set columns: <=15 = 1 row, >15 = 2 rows (bottom row >= top row) */
+    COLS = allEvents.length <= 15 ? allEvents.length : Math.floor(allEvents.length / 2);
+
+    /* Update title with filename */
+    const fname = file.name.replace(/\.xlsx?$/i, '');
+    document.querySelector('#page-title h1').textContent = fname;
+    document.querySelector('#page-title p').textContent =
+      `ลำดับเหตุการณ์ ${allEvents.length} รายการ`;
+
+    /* Show timeline, hide upload */
+    document.getElementById('upload-area').style.display = 'none';
+    document.getElementById('page-title').style.display = 'block';
+    document.getElementById('ctrl-toggle').classList.add('visible');
+
+    renderTimeline();
+    scheduleSave();
+  };
+  if (isCSV) reader.readAsText(file, 'UTF-8');
+  else reader.readAsArrayBuffer(file);
+}
+
+/* ── File input & drag-drop ── */
+document.getElementById('file-input').addEventListener('change', function(e) {
+  if (e.target.files.length) processFile(e.target.files[0]);
+});
+
+const uploadArea = document.getElementById('upload-area');
+uploadArea.addEventListener('dragover', function(e) {
+  e.preventDefault();
+  uploadArea.classList.add('dragover');
+});
+uploadArea.addEventListener('dragleave', function() {
+  uploadArea.classList.remove('dragover');
+});
+uploadArea.addEventListener('drop', function(e) {
+  e.preventDefault();
+  uploadArea.classList.remove('dragover');
+  if (e.dataTransfer.files.length) processFile(e.dataTransfer.files[0]);
+});
+
+/* ── Side panel toggle ── */
+function togglePanel() {
+  const panel = document.getElementById('ctrl-panel');
+  const toggle = document.getElementById('ctrl-toggle');
+  panel.classList.toggle('open');
+  toggle.classList.toggle('open');
+}
+
+/* ── Controls ── */
+function initControls() {
+  const allDesc  = Array.from(document.querySelectorAll('.ev-desc'));
+  const allDates = Array.from(document.querySelectorAll('.ev-date'));
+  const titleH1  = document.querySelector('.page-title h1');
+  const titleSub = document.querySelector('.page-title p');
+  const titleSub2 = document.querySelector('.page-title p.sub2');
+
+  /* Font size: descriptions */
+  let curFS = 12;
+  const fsVal = document.getElementById('fs-val');
+  function applyFS(v) {
+    curFS = Math.max(6, v);
+    allDesc.forEach(el => { el.style.fontSize = curFS + 'px'; });
+    fsVal.textContent = curFS + 'px';
+    scheduleSave();
+  }
+
+  /* Width */
+  const slider = document.getElementById('width-slider');
+  const wVal   = document.getElementById('w-val');
+  let curW = 100;
+  function applyW(v) {
+    curW = Math.max(40, v);
+    allDesc.forEach(el => { el.style.width = curW + 'px'; });
+    slider.value = Math.max(60, Math.min(2000, curW));
+    wVal.textContent = curW + 'px';
+    scheduleSave();
+  }
+  slider.addEventListener('input', () => applyW(parseFloat(slider.value)));
+
+  /* H1 font size */
+  let curH1FS = 32;
+  const h1Val = document.getElementById('h1-val');
+  function applyH1FS(v) {
+    curH1FS = Math.max(8, v);
+    titleH1.style.fontSize = curH1FS + 'px';
+    h1Val.textContent = curH1FS + 'px';
+    scheduleSave();
+  }
+
+  /* Subtitle font size */
+  let curSubFS = 15;
+  const subVal = document.getElementById('sub-val');
+  function applySubFS(v) {
+    curSubFS = Math.max(6, v);
+    titleSub.style.fontSize = curSubFS + 'px';
+    subVal.textContent = curSubFS + 'px';
+    scheduleSave();
+  }
+
+  /* Subtitle 2 font size */
+  let curSub2FS = 14;
+  const sub2Val = document.getElementById('sub2-val');
+  function applySub2FS(v) {
+    curSub2FS = Math.max(6, v);
+    if (titleSub2) titleSub2.style.fontSize = curSub2FS + 'px';
+    sub2Val.textContent = curSub2FS + 'px';
+    scheduleSave();
+  }
+
+  /* Date font size */
+  let curDtFS = 17;
+  const dtVal = document.getElementById('dt-val');
+  function applyDtFS(v) {
+    curDtFS = Math.max(6, v);
+    allDates.forEach(el => { el.style.fontSize = curDtFS + 'px'; });
+    dtVal.textContent = curDtFS + 'px';
+    scheduleSave();
+  }
+
+  /* Columns per row */
+  const colsVal = document.getElementById('cols-val');
+  function updateColsVal() { colsVal.textContent = COLS; }
+
+  /* Wire buttons */
+  document.getElementById('fs-up').onclick = () => applyFS(curFS + 1);
+  document.getElementById('fs-dn').onclick = () => applyFS(curFS - 1);
+  document.getElementById('w-up').onclick  = () => applyW(curW + 10);
+  document.getElementById('w-dn').onclick  = () => applyW(curW - 10);
+  document.getElementById('h1-up').onclick = () => applyH1FS(curH1FS + 1);
+  document.getElementById('h1-dn').onclick = () => applyH1FS(curH1FS - 1);
+  document.getElementById('sub-up').onclick = () => applySubFS(curSubFS + 1);
+  document.getElementById('sub-dn').onclick = () => applySubFS(curSubFS - 1);
+  document.getElementById('sub2-up').onclick = () => applySub2FS(curSub2FS + 1);
+  document.getElementById('sub2-dn').onclick = () => applySub2FS(curSub2FS - 1);
+  document.getElementById('dt-up').onclick = () => applyDtFS(curDtFS + 1);
+  document.getElementById('dt-dn').onclick = () => applyDtFS(curDtFS - 1);
+
+  document.getElementById('cols-up').onclick = () => {
+    COLS = Math.min(allEvents.length, COLS + 1);
+    updateColsVal();
+    renderTimeline();
+  };
+  document.getElementById('cols-dn').onclick = () => {
+    COLS = Math.max(3, COLS - 1);
+    updateColsVal();
+    renderTimeline();
+  };
+
+  /* Color pickers */
+  function wireColor(targets, inputId, def) {
+    const inp = document.getElementById(inputId);
+    inp.value = def;
+    inp.addEventListener('input', () => {
+      targets.forEach(t => t.style.color = inp.value);
+      scheduleSave();
+    });
+  }
+  wireColor(allDesc,     'desc-clr', '#4a5568');
+  wireColor([titleH1],   'h1-clr',   '#1e2d4d');
+  wireColor([titleSub],  'sub-clr',  '#7a8899');
+  wireColor(titleSub2 ? [titleSub2] : [], 'sub2-clr', '#9aaabb');
+
+  /* ── Save on text edits ── */
+  allDesc.forEach(el => el.addEventListener('input', scheduleSave));
+  allDates.forEach(el => el.addEventListener('input', scheduleSave));
+  if (titleH1)  titleH1.addEventListener('input', scheduleSave);
+  if (titleSub) titleSub.addEventListener('input', scheduleSave);
+  if (titleSub2) titleSub2.addEventListener('input', scheduleSave);
+
+  /* Init display */
+  applyFS(curFS);
+  applyW(curW);
+  applyH1FS(curH1FS);
+  applySubFS(curSubFS);
+  applySub2FS(curSub2FS);
+  applyDtFS(curDtFS);
+  updateColsVal();
+}
+
+/* ── Demo data: โครงการพัฒนาระบบ Smart City ── */
+function loadDemo() {
+  allEvents = [
+    { date: "10 ม.ค. 2568", desc: "ประชุมคณะกรรมการอนุมัติโครงการ Smart City ระยะที่ 1" },
+    { date: "25 ม.ค. 2568", desc: "ลงนามสัญญาจ้างบริษัทที่ปรึกษาออกแบบระบบ" },
+    { date: "14 ก.พ. 2568", desc: "สำรวจพื้นที่ติดตั้งเซ็นเซอร์ IoT ทั้ง 5 โซน" },
+    { date: "1 มี.ค. 2568", desc: "ส่งมอบแบบพิมพ์เขียวระบบบริหารจัดการข้อมูลกลาง" },
+    { date: "20 มี.ค. 2568", desc: "ประชุมรับฟังความคิดเห็นประชาชนในพื้นที่นำร่อง" },
+    { date: "5 เม.ย. 2568", desc: "เริ่มติดตั้งเสาอัจฉริยะ (Smart Pole) ล็อตแรก 50 ต้น" },
+    { date: "22 เม.ย. 2568", desc: "ทดสอบระบบกล้อง CCTV อัจฉริยะเชื่อมต่อ AI" },
+    { date: "10 พ.ค. 2568", desc: "เปิดใช้งานระบบ Wi-Fi สาธารณะในเขตเมืองเก่า" },
+    { date: "28 พ.ค. 2568", desc: "อบรมเจ้าหน้าที่ศูนย์ปฏิบัติการ (Command Center) รุ่นที่ 1" },
+    { date: "15 มิ.ย. 2568", desc: "ติดตั้งเซ็นเซอร์ตรวจวัดคุณภาพอากาศ PM2.5 ครบ 20 จุด" },
+    { date: "1 ก.ค. 2568", desc: "เปิดตัวแอปพลิเคชัน Smart City สำหรับประชาชน" },
+    { date: "18 ก.ค. 2568", desc: "ทดสอบระบบแจ้งเตือนน้ำท่วมอัตโนมัติ (Flood Alert)" },
+    { date: "5 ส.ค. 2568", desc: "ประชุมคณะกรรมการติดตามความก้าวหน้า ครั้งที่ 1" },
+    { date: "20 ส.ค. 2568", desc: "เชื่อมต่อระบบจราจรอัจฉริยะกับสัญญาณไฟ 30 แยก" },
+    { date: "8 ก.ย. 2568", desc: "เริ่มเก็บข้อมูล Big Data ด้านการจราจรและพลังงาน" },
+    { date: "25 ก.ย. 2568", desc: "ติดตั้งระบบชาร์จรถ EV อัจฉริยะ 10 สถานี" },
+    { date: "12 ต.ค. 2568", desc: "เปิดใช้ Digital Twin จำลองเมืองสำหรับวางแผนผังเมือง" },
+    { date: "30 ต.ค. 2568", desc: "อบรมเจ้าหน้าที่ศูนย์ปฏิบัติการ (Command Center) รุ่นที่ 2" },
+    { date: "15 พ.ย. 2568", desc: "ตรวจรับงานงวดที่ 1 ระบบโครงสร้างพื้นฐาน" },
+    { date: "1 ธ.ค. 2568", desc: "เปิดศูนย์ปฏิบัติการ Smart City Command Center อย่างเป็นทางการ" },
+    { date: "18 ธ.ค. 2568", desc: "ระบบ AI ตรวจจับเหตุผิดปกติทำงานครบทุกโซน" },
+    { date: "5 ม.ค. 2569", desc: "สรุปผลการดำเนินงานระยะที่ 1 เสนอผู้บริหาร" },
+    { date: "20 ม.ค. 2569", desc: "ประชุมคณะกรรมการติดตามความก้าวหน้า ครั้งที่ 2" },
+    { date: "8 ก.พ. 2569", desc: "ประเมินความพึงพอใจประชาชนผู้ใช้บริการ" },
+    { date: "25 ก.พ. 2569", desc: "ปรับปรุงระบบตามผลตอบรับจากผู้ใช้งาน" },
+    { date: "10 มี.ค. 2569", desc: "ขยายระบบ Smart Parking ครอบคลุม 500 ช่องจอด" },
+    { date: "28 มี.ค. 2569", desc: "เชื่อมต่อข้อมูลกับระบบ e-Government ของจังหวัด" },
+    { date: "15 เม.ย. 2569", desc: "ตรวจรับงานงวดที่ 2 ระบบซอฟต์แวร์และ AI" },
+    { date: "1 พ.ค. 2569", desc: "เปิดให้บริการข้อมูลเปิด (Open Data) สำหรับนักพัฒนา" },
+    { date: "20 พ.ค. 2569", desc: "จัดงานสัมมนา Smart City Forum แลกเปลี่ยนความรู้" },
+    { date: "10 มิ.ย. 2569", desc: "อนุมัติแผนโครงการ Smart City ระยะที่ 2" },
+    { date: "30 มิ.ย. 2569", desc: "ปิดโครงการระยะที่ 1 ส่งมอบงานทั้งหมด" },
+  ].map(ev => ({ ...ev, icon: autoIcon(ev.desc) }));
+
+  COLS = Math.floor(allEvents.length / 2);
+  document.querySelector('#page-title h1').textContent = 'โครงการพัฒนาระบบ Smart City';
+  document.querySelector('#page-title p').textContent = 'ลำดับเหตุการณ์ ม.ค. 2568 – มิ.ย. 2569  |  32 กิจกรรมหลัก  |  ระยะที่ 1';
+  document.querySelector('#page-title p.sub2').textContent = 'ครอบคลุมระบบ IoT, AI, Command Center, Digital Twin และบริการสาธารณะอัจฉริยะ';
+
+  document.getElementById('upload-area').style.display = 'none';
+  document.getElementById('page-title').style.display = 'block';
+  document.getElementById('ctrl-toggle').classList.add('visible');
+  renderTimeline();
+  scheduleSave();
+}
+
+/* ── Export PDF (vector text, direct download via jsPDF) ── */
+const PX2MM = 25.4 / 96;
+let _pdfFontCache = null;
+
+async function fetchPDFFonts() {
+  if (_pdfFontCache) return _pdfFontCache;
+  const [reg, bold, fa] = await Promise.all([
+    fetch('https://raw.githubusercontent.com/google/fonts/main/ofl/ibmplexsansthai/IBMPlexSansThai-Regular.ttf').then(r => r.arrayBuffer()),
+    fetch('https://raw.githubusercontent.com/google/fonts/main/ofl/ibmplexsansthai/IBMPlexSansThai-Bold.ttf').then(r => r.arrayBuffer()),
+    fetch('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/webfonts/fa-solid-900.ttf').then(r => r.arrayBuffer()),
+  ]);
+  _pdfFontCache = { reg, bold, fa };
+  return _pdfFontCache;
+}
+
+function ab2b64(buf) {
+  const a = new Uint8Array(buf);
+  let s = '';
+  for (let i = 0; i < a.length; i++) s += String.fromCharCode(a[i]);
+  return btoa(s);
+}
+
+function cssRGB(c) {
+  const m = c.match(/(\d+),\s*(\d+),\s*(\d+)/);
+  return m ? [+m[1], +m[2], +m[3]] : [0, 0, 0];
+}
+
+async function exportPDF() {
+  const btn = document.getElementById('btn-pdf');
+  const origHTML = btn.innerHTML;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังสร้าง...';
+  btn.disabled = true;
+
+  const panel = document.getElementById('ctrl-panel');
+  const toggle = document.getElementById('ctrl-toggle');
+  const wasOpen = panel.classList.contains('open');
+  panel.classList.remove('open');
+  toggle.classList.remove('open');
+  toggle.style.visibility = 'hidden';
+  await new Promise(r => setTimeout(r, 80));
+
+  try {
+    const fonts = await fetchPDFFonts();
+    const { jsPDF } = window.jspdf;
+
+    const sx = window.scrollX, sy = window.scrollY;
+    const abr = (el) => {
+      const r = el.getBoundingClientRect();
+      return { l: r.left+sx, t: r.top+sy, r: r.right+sx, b: r.bottom+sy, w: r.width, h: r.height };
+    };
+
+    const tEl = document.getElementById('page-title');
+    const rEl = document.getElementById('root');
+
+    /* ── Get browser-rendered text lines via Range API ── */
+    function getRenderedLines(el) {
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      const nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+      if (!nodes.length) return [];
+      const range = document.createRange();
+      const lines = [];
+      let curTop = null, cur = null;
+      for (const nd of nodes) {
+        for (let i = 0; i < nd.textContent.length; i++) {
+          range.setStart(nd, i);
+          range.setEnd(nd, i + 1);
+          const rc = range.getBoundingClientRect();
+          if (!rc.width && !rc.height) continue;
+          if (curTop === null || rc.top > curTop + 3) {
+            if (cur && cur.text.trim()) lines.push(cur);
+            cur = { text: '', top: rc.top + sy, bottom: rc.bottom + sy,
+                    left: rc.left + sx, right: rc.right + sx };
+            curTop = rc.top;
+          }
+          cur.text += nd.textContent[i];
+          cur.left   = Math.min(cur.left,   rc.left + sx);
+          cur.right  = Math.max(cur.right,  rc.right + sx);
+          cur.bottom = Math.max(cur.bottom, rc.bottom + sy);
+        }
+      }
+      if (cur && cur.text.trim()) lines.push(cur);
+      return lines;
+    }
+
+    /* Pre-scan & cache rendered lines for every text element */
+    const textCache = new Map();
+    const textEls = [
+      ...tEl.querySelectorAll('h1, p'),
+      ...rEl.querySelectorAll('.ev-date, .ev-desc')
+    ];
+    textEls.forEach(el => textCache.set(el, getRenderedLines(el)));
+
+    /* ── Content bounds: shapes + actual text positions ── */
+    let cL=1e9, cT=1e9, cR=-1e9, cB=-1e9;
+
+    [...rEl.querySelectorAll('.ev-cell-top,.ev-cell-bot,.tl-bar-bg'),
+     ...tEl.querySelectorAll('h1,p')].forEach(e => {
+      const a = abr(e);
+      if (!a.w || !a.h) return;
+      cL = Math.min(cL, a.l); cT = Math.min(cT, a.t);
+      cR = Math.max(cR, a.r); cB = Math.max(cB, a.b);
+    });
+
+    /* Include actual rendered text overflow in bounds */
+    textCache.forEach(lines => {
+      lines.forEach(ln => {
+        cL = Math.min(cL, ln.left);  cR = Math.max(cR, ln.right);
+        cT = Math.min(cT, ln.top);   cB = Math.max(cB, ln.bottom);
+      });
+    });
+
+    const padPx = 40;
+    const padMM = padPx * PX2MM;
+    const pw = (cR - cL) * PX2MM + padMM * 2;
+    const ph = (cB - cT) * PX2MM + padMM * 2;
+    const X = d => (d - cL) * PX2MM + padMM;
+    const Y = d => (d - cT) * PX2MM + padMM;
+    const M = v => v * PX2MM;
+
+    const pdf = new jsPDF({ unit: 'mm', format: [pw, ph] });
+
+    /* Add fonts */
+    pdf.addFileToVFS('Thai-R.ttf', ab2b64(fonts.reg));
+    pdf.addFont('Thai-R.ttf', 'Thai', 'normal');
+    pdf.addFileToVFS('Thai-B.ttf', ab2b64(fonts.bold));
+    pdf.addFont('Thai-B.ttf', 'Thai', 'bold');
+    pdf.addFileToVFS('FA.ttf', ab2b64(fonts.fa));
+    pdf.addFont('FA.ttf', 'FA', 'normal');
+
+    /* Background */
+    pdf.setFillColor(245, 247, 250);
+    pdf.rect(0, 0, pw, ph, 'F');
+
+    /* ── Draw text using cached browser-rendered lines ── */
+    const drawEl = (el, weight) => {
+      const cs = getComputedStyle(el);
+      const fs = parseFloat(cs.fontSize);
+      const c  = cssRGB(cs.color);
+      const a  = abr(el);
+      const lines = textCache.get(el);
+      if (!lines || !lines.length) return;
+
+      pdf.setFont('Thai', weight);
+      pdf.setFontSize(fs * 0.75);
+      pdf.setTextColor(...c);
+
+      for (const ln of lines) {
+        const txt = ln.text.trim();
+        if (!txt) continue;
+        /* baseline ≈ 76% from top of line box */
+        const baseline = ln.top + (ln.bottom - ln.top) * 0.76;
+        const cx = a.l + a.w / 2;
+        pdf.text(txt, X(cx), Y(baseline), { align: 'center' });
+      }
+    };
+
+    /* Titles */
+    drawEl(tEl.querySelector('h1'), 'bold');
+    drawEl(tEl.querySelector('p'), 'normal');
+    const s2 = tEl.querySelector('p.sub2');
+    if (s2 && s2.textContent.trim()) drawEl(s2, 'normal');
+
+    /* Color bar segments */
+    rEl.querySelectorAll('.tl-bar-seg').forEach(el => {
+      const a = abr(el);
+      pdf.setFillColor(...cssRGB(getComputedStyle(el).backgroundColor));
+      pdf.rect(X(a.l), Y(a.t), M(a.w), M(a.h), 'F');
+    });
+
+    /* Dots on bar */
+    rEl.querySelectorAll('.ev-dot').forEach(el => {
+      const a = abr(el);
+      const bc = cssRGB(getComputedStyle(el).borderColor);
+      pdf.setFillColor(255, 255, 255);
+      pdf.setDrawColor(...bc);
+      pdf.setLineWidth(M(2.5));
+      pdf.circle(X(a.l + a.w/2), Y(a.t + a.h/2), M(a.w/2), 'FD');
+    });
+
+    /* Stems */
+    rEl.querySelectorAll('.ev-stem').forEach(el => {
+      const a = abr(el);
+      pdf.setFillColor(...cssRGB(getComputedStyle(el).backgroundColor));
+      pdf.rect(X(a.l), Y(a.t), Math.max(M(a.w), 0.5), M(a.h), 'F');
+    });
+
+    /* Circles + icons */
+    rEl.querySelectorAll('.ev-circle').forEach(el => {
+      const a = abr(el);
+      const c = cssRGB(getComputedStyle(el).backgroundColor);
+      const cx = X(a.l + a.w/2), cy = Y(a.t + a.h/2), r = M(a.w/2);
+      pdf.setFillColor(...c);
+      pdf.circle(cx, cy, r, 'F');
+
+      const ico = el.querySelector('i');
+      if (ico) {
+        const content = getComputedStyle(ico, '::before').content;
+        if (content && content !== 'none' && content !== 'normal') {
+          const ch = content.replace(/['"]/g, '');
+          pdf.setFont('FA', 'normal');
+          pdf.setFontSize(a.w * 0.34);
+          pdf.setTextColor(255, 255, 255);
+          pdf.text(ch, cx, cy + M(a.w) * 0.12, { align: 'center' });
+        }
+      }
+    });
+
+    /* Date text */
+    rEl.querySelectorAll('.ev-date').forEach(el => drawEl(el, 'bold'));
+
+    /* Description text */
+    rEl.querySelectorAll('.ev-desc').forEach(el => drawEl(el, 'normal'));
+
+    /* Save */
+    const title = tEl.querySelector('h1')?.textContent || 'timeline';
+    pdf.save(title.replace(/[/\\?%*:|"<>]/g, '') + '.pdf');
+
+  } catch (err) {
+    console.error('PDF export failed:', err);
+    alert('สร้าง PDF ไม่สำเร็จ: ' + err.message);
+  } finally {
+    btn.innerHTML = origHTML;
+    btn.disabled = false;
+    toggle.style.visibility = '';
+    if (wasOpen) { panel.classList.add('open'); toggle.classList.add('open'); }
+  }
+}
+
+/* ── Export project to .json file ── */
+
+function exportProject() {
+  const titleH1  = document.querySelector('#page-title h1');
+  const titleSub = document.querySelector('#page-title p');
+  const titleSub2 = document.querySelector('#page-title p.sub2');
+
+  const eventsSnapshot = allEvents.map((ev, idx) => {
+    const descEl = document.querySelector(`[data-id="desc-${Math.floor(idx / COLS)}-${idx % COLS}"]`);
+    const dateEl = document.querySelector(`[data-id="date-${Math.floor(idx / COLS)}-${idx % COLS}"]`);
+    return {
+      date: dateEl ? dateEl.textContent : ev.date,
+      desc: descEl ? descEl.textContent : ev.desc,
+      icon: ev.icon,
+    };
+  });
+
+  const project = {
+    version: 1,
+    savedAt: new Date().toISOString(),
+    title: titleH1 ? titleH1.textContent : '',
+    subtitle: titleSub ? titleSub.textContent : '',
+    subtitle2: titleSub2 ? titleSub2.textContent : '',
+    cols: COLS,
+    events: eventsSnapshot,
+    settings: gatherSettings(),
+  };
+
+  const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (titleH1 ? titleH1.textContent.replace(/[/\\?%*:|"<>]/g, '') : 'timeline') + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ── Import project from .json file ── */
+document.getElementById('project-input').addEventListener('change', function(e) {
+  if (!e.target.files.length) return;
+  const file = e.target.files[0];
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const project = JSON.parse(ev.target.result);
+      if (!project.events || !Array.isArray(project.events) || project.events.length === 0) {
+        alert('ไฟล์ไม่ถูกต้อง หรือไม่มีข้อมูลเหตุการณ์');
+        return;
+      }
+
+      allEvents = project.events;
+      COLS = project.cols || Math.floor(allEvents.length / 2);
+
+      document.querySelector('#page-title h1').textContent = project.title || 'Timeline';
+      document.querySelector('#page-title p').textContent = project.subtitle || '';
+      document.querySelector('#page-title p.sub2').textContent = project.subtitle2 || '';
+
+      document.getElementById('upload-area').style.display = 'none';
+      document.getElementById('page-title').style.display = 'block';
+      document.getElementById('ctrl-toggle').classList.add('visible');
+
+      renderTimeline();
+      if (project.settings) restoreSettings(project.settings);
+      scheduleSave();
+    } catch (err) {
+      alert('ไม่สามารถอ่านไฟล์ได้: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = ''; /* reset so same file can be loaded again */
+});
+
+/* ── Auto-restore on page load ── */
+tryRestore();
+</script>
+</body>
+</html>
