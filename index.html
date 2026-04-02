@@ -1488,33 +1488,6 @@
           descEl.dataset.id = `desc-${r}-${i}`;
           descEl.innerHTML = wrapNames(ev.desc);
 
-          /* Image attachment */
-          const imgControls = document.createElement('div');
-          imgControls.className = 'ev-img-controls';
-
-          const addImgBtn = document.createElement('button');
-          addImgBtn.className = 'ev-img-btn';
-          addImgBtn.innerHTML = '<i class="fa-solid fa-image"></i>';
-          addImgBtn.title = 'เพิ่ม/เปลี่ยนรูปภาพ';
-          addImgBtn.onclick = () => openImagePicker(evIdx);
-          imgControls.appendChild(addImgBtn);
-
-          let imgWrap = null;
-          if (ev.image) {
-            const rmImgBtn = document.createElement('button');
-            rmImgBtn.className = 'ev-img-btn rm';
-            rmImgBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
-            rmImgBtn.title = 'ลบรูปภาพ';
-            rmImgBtn.onclick = () => removeImage(evIdx);
-            imgControls.appendChild(rmImgBtn);
-
-            imgWrap = document.createElement('div');
-            imgWrap.className = 'ev-img-wrap';
-            const imgEl = document.createElement('img');
-            imgEl.src = ev.image;
-            imgWrap.appendChild(imgEl);
-          }
-
           const cell = document.createElement('div');
           cell.className = isAbove ? 'ev-cell-top' : 'ev-cell-bot';
           cell.style.gridColumn = gcol;
@@ -1522,9 +1495,7 @@
           cell.appendChild(stem);
           cell.appendChild(circle);
           cell.appendChild(dateEl);
-          if (imgWrap) cell.appendChild(imgWrap);
           cell.appendChild(descEl);
-          cell.appendChild(imgControls);
           section.appendChild(cell);
         });
 
@@ -2033,18 +2004,6 @@
           const a = abr(el);
           pdf.setFillColor(...cssRGB(getComputedStyle(el).backgroundColor));
           pdf.rect(X(a.l), Y(a.t), Math.max(M(a.w), 0.5), M(a.h), 'F');
-        });
-
-        /* Images */
-        rEl.querySelectorAll('.ev-img-wrap img').forEach(el => {
-          const a = abr(el);
-          let format = 'JPEG';
-          const match = el.src.match(/data:image\/(jpeg|jpg|png|webp);/i);
-          if (match) format = match[1].toUpperCase();
-          if (format === 'JPG') format = 'JPEG';
-          try {
-            pdf.addImage(el.src, format, X(a.l), Y(a.t), M(a.w), M(a.h));
-          } catch (e) { console.warn('PDF addImage error', e); }
         });
 
         /* Circles + icons */
