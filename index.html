@@ -9,7 +9,30 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700&display=swap');
+
+    /* ── Design Tokens (Stitch-2 MD3 Tonal System) ── */
+    :root {
+      --surface: #f7f9fb;
+      --surface-low: #f2f4f6;
+      --surface-mid: #eceef0;
+      --surface-high: #e6e8ea;
+      --surface-highest: #e0e3e5;
+      --surface-white: #ffffff;
+      --on-surface: #191c1e;
+      --on-surface-var: #434655;
+      --primary: #4d556a;
+      --primary-ctr: #656d84;
+      --primary-fixed: #dae2fd;
+      --secondary-fixed: #d5e3fd;
+      --outline: #c3c6d7;
+      --shadow-sm: 0 2px 12px rgba(25, 28, 30, 0.06);
+      --shadow-md: 0 8px 32px rgba(25, 28, 30, 0.08);
+      --shadow-lg: 0 16px 48px rgba(25, 28, 30, 0.10);
+      /* ── Font family tokens ── */
+      --font-body: 'Sarabun', sans-serif;
+      --font-heading: 'Manrope', 'Sarabun', sans-serif;
+    }
 
     html {
       font-size: calc(16px + 2pt);
@@ -22,9 +45,38 @@
     }
 
     body {
-      font-family: 'IBM Plex Sans Thai', sans-serif;
-      background: #f5f7fa;
-      padding: 20px calc(36px + 20pt + 20px) 72px;
+      font-family: var(--font-body);
+      background: #dce1e8;
+      overflow: hidden;
+      height: 100dvh;
+    }
+
+    /* ── Canvas viewport: the scrollable stage that holds the paper ── */
+    #canvas-viewport {
+      position: fixed;
+      top: 52px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow: auto;
+      background: #dce1e8;
+      background-image: linear-gradient(160deg, rgba(77, 85, 106, 0.09) 0%, rgba(101, 109, 132, 0.02) 100%);
+      transition: left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #canvas-viewport.shifted {
+      left: 256px;
+    }
+
+    /* ── Canvas stage: centers the paper inside the viewport ── */
+    #canvas-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 48px 48px 80px;
+      min-height: 100%;
+      min-width: max-content;
     }
 
     /* ── Upload area ── */
@@ -33,55 +85,66 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 16px;
-      min-height: 260px;
-      border: 3px dashed #c5d0e0;
-      border-radius: 16px;
-      background: #fff;
-      margin: 40px auto;
-      max-width: 620px;
-      padding: 40px;
-      transition: border-color 0.2s, background 0.2s;
+      gap: 18px;
+      min-height: 280px;
+      border-radius: 24px;
+      background: var(--surface-white);
+      margin: 0;
+      max-width: 640px;
+      padding: 52px 40px;
+      box-shadow: var(--shadow-md);
       cursor: pointer;
+      transition: box-shadow 0.25s, background 0.25s;
+      border: none;
     }
 
     #upload-area.dragover {
-      border-color: #4A90D9;
-      background: #eef4ff;
+      background: var(--primary-fixed);
+      box-shadow: 0 12px 48px rgba(77, 85, 106, 0.14);
     }
 
     #upload-area i {
-      font-size: 3rem;
-      color: #4A90D9;
+      font-size: 2.6rem;
+      color: var(--primary);
+      opacity: 0.65;
     }
 
     #upload-area h2 {
-      font-size: 1.1rem;
-      color: #3a4a6b;
-      font-weight: 600;
+      font-family: var(--font-heading);
+      font-size: 1.15rem;
+      color: var(--on-surface);
+      font-weight: 700;
+      letter-spacing: -0.2px;
     }
 
     #upload-area p {
       font-size: 0.72rem;
-      color: #8a9ab5;
+      color: var(--on-surface-var);
       text-align: center;
-      line-height: 1.6;
+      line-height: 1.75;
     }
 
     #upload-area .btn-upload {
-      padding: 10px 28px;
-      background: #4A90D9;
+      padding: 11px 32px;
+      background: var(--primary);
       color: #fff;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       font-size: 0.82rem;
       font-weight: 600;
       cursor: pointer;
-      transition: background 0.15s;
+      font-family: var(--font-body);
+      transition: filter 0.15s, transform 0.1s;
+      letter-spacing: 0.1px;
     }
 
     #upload-area .btn-upload:hover {
-      background: #3678c0;
+      filter: brightness(1.15);
+      transform: translateY(-1px);
+    }
+
+    #upload-area .btn-upload:active {
+      transform: scale(0.97);
     }
 
     .btn-row {
@@ -93,20 +156,24 @@
 
     .btn-demo {
       padding: 8px 20px;
-      background: transparent;
-      color: #7a8899;
-      border: 1px solid #c5d0e0;
+      background: var(--surface-high);
+      color: var(--on-surface-var);
+      border: none;
       border-radius: 8px;
       font-size: 0.72rem;
       font-weight: 600;
       cursor: pointer;
-      font-family: 'IBM Plex Sans Thai', sans-serif;
-      transition: background 0.15s, color 0.15s;
+      font-family: var(--font-body);
+      transition: background 0.15s, color 0.15s, transform 0.1s;
     }
 
     .btn-demo:hover {
-      background: #f0f3f8;
-      color: #3a4a6b;
+      background: var(--surface-highest);
+      color: var(--on-surface);
+    }
+
+    .btn-demo:active {
+      transform: scale(0.97);
     }
 
     #file-input {
@@ -116,59 +183,67 @@
     /* ── Title ── */
     .page-title {
       text-align: center;
-      margin-bottom: 16px;
+      margin-bottom: 24px;
+      padding: 4px 0;
     }
 
     .page-title h1 {
-      font-size: 1.7rem;
-      font-weight: 700;
-      color: #1e2d4d;
-      letter-spacing: -0.3px;
+      font-family: var(--font-heading);
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: var(--on-surface);
+      letter-spacing: -0.5px;
+      line-height: 1.2;
     }
 
     .page-title p {
       font-size: 0.82rem;
-      color: #7a8899;
-      margin-top: 4px;
+      color: var(--on-surface-var);
+      margin-top: 6px;
+      line-height: 1.6;
     }
 
     .page-title p.sub2 {
-      font-size: 0.75rem;
-      color: #9aaabb;
+      font-size: 0.73rem;
+      color: var(--on-surface-var);
+      opacity: 0.6;
       margin-top: 3px;
-      font-style: italic;
     }
 
     /* ── Timeline section: CSS Grid ── */
     .tl-section {
       display: grid;
-      grid-template-rows: minmax(160px, auto) 46px minmax(160px, auto);
+      grid-template-rows: minmax(160px, auto) 24px minmax(160px, auto);
       width: 100%;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
     }
 
     .ev-cell-top {
       display: flex;
       flex-direction: column-reverse;
       align-items: center;
-      gap: 3px;
-      min-width: 0;
+      gap: 4px;
+      min-width: 195px;
+      overflow: visible;
     }
 
     .ev-cell-bot {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 3px;
-      min-width: 0;
+      gap: 4px;
+      min-width: 195px;
+      overflow: visible;
     }
 
     .tl-bar-bg {
       grid-row: 2;
       display: flex;
-      border-radius: 4px;
+      border-radius: 6px;
       overflow: hidden;
       z-index: 1;
+      align-self: center;
+      height: 12px;
     }
 
     .tl-bar-seg {
@@ -187,40 +262,57 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 16px;
-      height: 16px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
-      background: #fff;
-      border: 3px solid #fff;
-      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.28);
+      background: var(--surface-white);
+      border: 3.5px solid var(--surface-white);
+      box-shadow: 0 2px 10px rgba(25, 28, 30, 0.25);
       pointer-events: all;
     }
 
     .ev-stem {
       width: 2px;
-      height: 32px;
+      height: 40px;
       flex-shrink: 0;
+      opacity: 0.6;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Bridge stem into the bar row so it visually connects */
+    .ev-cell-top .ev-stem {
+      margin-bottom: -12px;
+    }
+
+    .ev-cell-bot .ev-stem {
+      margin-top: -12px;
     }
 
     .ev-circle {
-      width: 54px;
-      height: 54px;
+      width: 52px;
+      height: 52px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
       cursor: pointer;
-      transition: transform 0.15s, box-shadow 0.15s;
+      transition: transform 0.2s, filter 0.2s;
     }
 
     .ev-circle:hover {
-      transform: scale(1.12);
+      transform: scale(1.1);
+      filter: brightness(1.12);
+    }
+
+    .ev-circle:active {
+      transform: scale(0.95);
     }
 
     .ev-circle i {
-      font-size: 1.15rem;
-      color: #fff;
+      font-size: 1.1rem;
+      color: rgba(255, 255, 255, 0.95);
       pointer-events: none;
     }
 
@@ -229,12 +321,12 @@
       display: none;
       position: fixed;
       z-index: 500;
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
-      padding: 10px;
-      width: 280px;
-      max-height: 320px;
+      background: var(--surface-white);
+      border-radius: 18px;
+      box-shadow: var(--shadow-lg), 0 2px 8px rgba(25, 28, 30, 0.06);
+      padding: 12px;
+      width: 284px;
+      max-height: 340px;
       overflow-y: auto;
     }
 
@@ -246,40 +338,45 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
       padding: 0 2px;
     }
 
     #icon-picker .ip-header input {
       flex: 1;
-      padding: 6px 10px;
-      border: 1px solid #dde3ec;
-      border-radius: 6px;
+      padding: 7px 12px;
+      border: none;
+      background: var(--surface-high);
+      border-radius: 8px;
       font-size: 0.65rem;
-      font-family: 'IBM Plex Sans Thai', sans-serif;
+      font-family: var(--font-body);
       outline: none;
+      color: var(--on-surface);
+      transition: background 0.15s, box-shadow 0.15s;
     }
 
     #icon-picker .ip-header input:focus {
-      border-color: #4A90D9;
+      background: var(--primary-fixed);
+      box-shadow: 0 0 0 2px rgba(77, 85, 106, 0.18);
     }
 
     #icon-picker .ip-close {
-      width: 24px;
-      height: 24px;
+      width: 26px;
+      height: 26px;
       border: none;
       border-radius: 50%;
-      background: #f0f3f8;
-      color: #666;
-      font-size: 0.7rem;
+      background: var(--surface-high);
+      color: var(--on-surface-var);
+      font-size: 0.75rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: background 0.15s;
     }
 
     #icon-picker .ip-close:hover {
-      background: #e0e4ea;
+      background: var(--surface-highest);
     }
 
     #icon-picker .ip-grid {
@@ -291,38 +388,37 @@
     #icon-picker .ip-item {
       width: 40px;
       height: 40px;
-      border: 2px solid transparent;
+      border: none;
       border-radius: 8px;
-      background: #f5f7fa;
+      background: var(--surface-low);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: background 0.12s, border-color 0.12s, transform 0.12s;
+      transition: background 0.12s, transform 0.12s;
       font-size: 0.85rem;
-      color: #3a4a6b;
+      color: var(--primary);
     }
 
     #icon-picker .ip-item:hover {
-      background: #e0ecff;
-      border-color: #4A90D9;
-      transform: scale(1.1);
+      background: var(--primary-fixed);
+      transform: scale(1.08);
     }
 
     #icon-picker .ip-item.active {
-      background: #4A90D9;
+      background: var(--primary);
       color: #fff;
-      border-color: #3678c0;
     }
 
     #icon-picker .ip-cat {
       grid-column: 1 / -1;
-      font-size: 0.55rem;
-      color: #8a9ab5;
-      font-weight: 600;
+      font-family: var(--font-heading);
+      font-size: 0.5rem;
+      color: var(--on-surface-var);
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      padding: 6px 2px 2px;
+      letter-spacing: 0.9px;
+      padding: 8px 2px 3px;
     }
 
     #icon-picker .ip-cat:first-child {
@@ -342,6 +438,7 @@
     }
 
     .ev-date {
+      font-family: var(--font-heading);
       font-size: 0.9rem;
       font-weight: 700;
       text-align: center;
@@ -351,93 +448,200 @@
 
     .ev-desc {
       font-size: 0.75rem;
-      color: #4a5568;
+      color: var(--on-surface-var);
       text-align: center;
-      line-height: 1.5;
-      padding: 3px 5px;
-      word-break: normal;
-      overflow-wrap: normal;
+      line-height: 1.65;
+      padding: 4px 6px;
+      word-break: keep-all;
+      width: 195px;
+      margin-left: -97.5px;
+      margin-right: -97.5px;
+      /* ไม่ตัดคำกลางๆ */
+      overflow-wrap: break-word;
+      /* wrap เฉพาะเมื่อจำเป็น */
       overflow: hidden;
       cursor: default;
-      border-radius: 4px;
-      border: 1px solid transparent;
-      transition: border-color 0.15s, background 0.15s;
+      border-radius: 6px;
+      border: none;
+      transition: background 0.2s, box-shadow 0.2s;
     }
 
     .ev-desc:hover {
-      border-color: rgba(0, 0, 0, 0.15);
       background: rgba(255, 255, 255, 0.7);
     }
 
     .ev-desc:focus {
       outline: none;
-      border-color: rgba(0, 0, 0, 0.3);
-      background: #fff;
-      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
+      background: var(--surface-white);
+      box-shadow: 0 2px 14px rgba(25, 28, 30, 0.08);
     }
 
     .ev-desc .nowrap {
       white-space: nowrap;
     }
 
-    /* ── Floating toggle button ── */
-    #ctrl-toggle {
+    /* ── Top Bar ── */
+    #top-bar {
       position: fixed;
-      bottom: 16px;
-      right: 16px;
-      z-index: 200;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 52px;
+      z-index: 300;
+      background: rgba(247, 249, 251, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 1px 0 rgba(195, 198, 215, 0.5), 0 2px 16px rgba(25, 28, 30, 0.05);
       display: none;
-      width: 42px;
-      height: 42px;
-      border: none;
-      border-radius: 50%;
-      background: rgba(58, 74, 107, 0.85);
-      color: #fff;
-      font-size: 1rem;
-      cursor: pointer;
-      box-shadow: 0 3px 14px rgba(0, 0, 0, 0.2);
-      transition: background 0.15s, transform 0.2s;
+      align-items: center;
+      gap: 6px;
+      padding: 0 16px;
+    }
+
+    #top-bar.visible {
+      display: flex;
+    }
+
+    .tb-brand {
+      font-family: var(--font-heading);
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: -0.2px;
+      margin-right: 4px;
+      white-space: nowrap;
+    }
+
+    .tb-sep {
+      width: 1px;
+      height: 20px;
+      background: var(--outline);
+      opacity: 0.5;
+      margin: 0 4px;
+      flex-shrink: 0;
+    }
+
+    .tb-btn {
+      display: flex;
       align-items: center;
       justify-content: center;
+      gap: 5px;
+      height: 32px;
+      padding: 0 10px;
+      border: none;
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-size: 0.65rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      color: var(--on-surface-var);
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
-    #ctrl-toggle.visible {
-      display: flex;
-      opacity: 0;
-    }
-
-    #ctrl-toggle.visible:hover {
-      opacity: 1;
-    }
-
-    #ctrl-toggle:hover {
-      background: rgba(58, 74, 107, 1);
-      transform: scale(1.08);
-    }
-
-    #ctrl-toggle.open {
-      opacity: 1;
-      background: #4A90D9;
-    }
-
-    #ctrl-toggle i {
+    .tb-btn i {
+      font-size: 0.75rem;
       pointer-events: none;
     }
 
-    /* ── Side panel (slides from right) ── */
+    .tb-btn:hover {
+      background: var(--surface-high);
+      color: var(--on-surface);
+    }
+
+    .tb-btn:active {
+      transform: scale(0.95);
+    }
+
+    .tb-btn.tb-icon-only {
+      width: 32px;
+      padding: 0;
+    }
+
+    .tb-btn.active {
+      background: var(--primary-fixed);
+      color: var(--primary);
+    }
+
+    .tb-btn:disabled {
+      opacity: 0.35;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .tb-btn.tb-pdf {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .tb-btn.tb-pdf:hover {
+      background: #fde68a;
+    }
+
+    .tb-btn.tb-save {
+      background: var(--primary-fixed);
+      color: var(--primary);
+    }
+
+    .tb-btn.tb-save:hover {
+      background: #c8d5fb;
+    }
+
+    .tb-btn.tb-reset {
+      background: #fff1f2;
+      color: #be123c;
+    }
+
+    .tb-btn.tb-reset:hover {
+      background: #fee2e2;
+    }
+
+    .tb-spacer {
+      flex: 1;
+    }
+
+    /* Canvas size select in top bar */
+    #canvas-size-select {
+      height: 30px;
+      padding: 0 8px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.65rem;
+      font-family: var(--font-body);
+      color: var(--on-surface);
+      background: var(--surface-high);
+      cursor: pointer;
+      outline: none;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+
+    #canvas-size-select:focus {
+      background: var(--primary-fixed);
+    }
+
+    /* ── Floating toggle button (legacy, hidden) ── */
+    #ctrl-toggle {
+      display: none;
+    }
+
+    /* ── Left Sidebar ── */
     #ctrl-panel {
       position: fixed;
-      top: 0;
-      right: 0;
+      top: 52px;
+      left: 0;
       bottom: 0;
-      width: 220px;
-      z-index: 150;
-      background: rgba(255, 255, 255, 0.98);
-      border-left: 1px solid #dde3ec;
-      box-shadow: -4px 0 20px rgba(0, 0, 0, 0.08);
-      font-family: 'IBM Plex Sans Thai', sans-serif;
-      transform: translateX(100%);
-      transition: transform 0.25s ease;
+      width: 224px;
+      z-index: 200;
+      background: rgba(242, 244, 246, 0.96);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: 2px 0 24px rgba(25, 28, 30, 0.07);
+      font-family: var(--font-body);
+      transform: translateX(-100%);
+      transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
       overflow-y: auto;
       padding: 16px 14px 80px;
     }
@@ -447,45 +651,60 @@
     }
 
     #ctrl-panel .cp-title {
-      font-size: 0.65rem;
-      font-weight: 700;
-      color: #3a4a6b;
-      margin-bottom: 12px;
+      font-family: var(--font-heading);
+      font-size: 0.55rem;
+      font-weight: 800;
+      color: var(--on-surface);
+      letter-spacing: 0.9px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
 
     #ctrl-panel .cp-title button {
-      background: none;
+      background: var(--surface-high);
       border: none;
-      color: #aab;
-      font-size: 0.9rem;
+      color: var(--on-surface-var);
+      font-size: 0.85rem;
       cursor: pointer;
-      padding: 2px;
+      padding: 4px 7px;
+      border-radius: 6px;
+      line-height: 1;
+      transition: background 0.15s, color 0.15s;
     }
 
     #ctrl-panel .cp-title button:hover {
-      color: #e85b5b;
+      background: var(--surface-highest);
+      color: var(--on-surface);
     }
 
     .ctrl-group {
       display: flex;
       flex-direction: column;
-      padding: 8px 0;
-      gap: 5px;
-      border-bottom: 1px solid #f0f3f8;
+      padding: 10px 0;
+      gap: 6px;
+      position: relative;
     }
 
-    .ctrl-group:last-child {
-      border-bottom: none;
+    .ctrl-group+.ctrl-group::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 8px;
+      right: 8px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(195, 198, 215, 0.5), transparent);
     }
 
     .ctrl-label {
-      font-size: 0.55rem;
-      color: #8a9ab5;
-      letter-spacing: 0.6px;
+      font-family: var(--font-heading);
+      font-size: 0.5rem;
+      color: var(--on-surface-var);
+      letter-spacing: 0.9px;
       text-transform: uppercase;
+      font-weight: 700;
       white-space: nowrap;
     }
 
@@ -499,9 +718,9 @@
       width: 26px;
       height: 26px;
       border: none;
-      border-radius: 7px;
-      background: #f0f3f8;
-      color: #3a4a6b;
+      border-radius: 8px;
+      background: var(--surface-high);
+      color: var(--primary);
       font-size: 0.82rem;
       font-weight: 700;
       cursor: pointer;
@@ -513,13 +732,14 @@
     }
 
     #ctrl-panel button.ctrl-btn:hover {
-      background: #d8e4f5;
+      background: var(--primary-fixed);
     }
 
     .size-val {
+      font-family: var(--font-heading);
       font-size: 0.62rem;
       font-weight: 600;
-      color: #4A90D9;
+      color: var(--primary);
       min-width: 32px;
       text-align: center;
     }
@@ -527,37 +747,38 @@
     #ctrl-panel input[type="color"] {
       width: 22px;
       height: 22px;
-      border: 2px solid #dde3ec;
+      border: none;
       border-radius: 50%;
       padding: 0;
       cursor: pointer;
       flex-shrink: 0;
       overflow: hidden;
       background: none;
+      box-shadow: 0 0 0 2px var(--surface-highest);
     }
 
     #ctrl-panel input[type="range"] {
       width: 100%;
-      accent-color: #4A90D9;
+      accent-color: var(--primary);
       cursor: pointer;
     }
 
     .theme-select {
       flex: 1;
-      padding: 4px 6px;
-      border: 1px solid #dde3ec;
-      border-radius: 6px;
+      padding: 5px 8px;
+      border: none;
+      border-radius: 8px;
       font-size: 0.65rem;
-      font-family: 'IBM Plex Sans Thai', sans-serif;
-      color: #3a4a6b;
+      font-family: var(--font-body);
+      color: var(--on-surface);
       outline: none;
-      background: #f0f3f8;
+      background: var(--surface-high);
       cursor: pointer;
+      transition: background 0.15s;
     }
 
     .theme-select:focus {
-      border-color: #4A90D9;
-      background: #fff;
+      background: var(--primary-fixed);
     }
 
     /* ── Action buttons inside panel ── */
@@ -565,41 +786,42 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
-      padding-top: 10px;
+      padding-top: 12px;
     }
 
     .cp-actions button {
       width: 100%;
-      padding: 8px 12px;
+      padding: 9px 12px;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       font-size: 0.65rem;
       font-weight: 600;
       cursor: pointer;
-      font-family: 'IBM Plex Sans Thai', sans-serif;
-      transition: background 0.15s;
+      font-family: var(--font-body);
+      transition: filter 0.15s, transform 0.1s;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
+      letter-spacing: 0.1px;
+    }
+
+    .cp-actions button:hover {
+      filter: brightness(1.06);
+    }
+
+    .cp-actions button:active {
+      transform: scale(0.97);
     }
 
     .cp-actions .btn-save {
-      background: #dbeafe;
-      color: #2563eb;
-    }
-
-    .cp-actions .btn-save:hover {
-      background: #bfdbfe;
+      background: var(--primary-fixed);
+      color: var(--primary);
     }
 
     .cp-actions .btn-pdf {
       background: #fef3c7;
-      color: #b45309;
-    }
-
-    .cp-actions .btn-pdf:hover {
-      background: #fde68a;
+      color: #92400e;
     }
 
     .cp-actions .btn-save i,
@@ -611,72 +833,718 @@
 
     .cp-actions .btn-load {
       background: #f0fdf4;
-      color: #16a34a;
-    }
-
-    .cp-actions .btn-load:hover {
-      background: #dcfce7;
+      color: #166534;
     }
 
     .cp-actions .btn-reload {
-      background: #fee2e2;
-      color: #dc2626;
-    }
-
-    .cp-actions .btn-reload:hover {
-      background: #fecaca;
+      background: #fff1f2;
+      color: #be123c;
     }
 
     /* ── Editable title + subtitle ── */
     .page-title h1[contenteditable],
     .page-title p[contenteditable] {
-      border-radius: 4px;
-      border: 1px solid transparent;
-      transition: border-color 0.15s, background 0.15s;
+      border-radius: 6px;
+      border: none;
+      transition: background 0.2s, box-shadow 0.2s;
       outline: none;
       cursor: default;
+      padding: 2px 6px;
+      display: block;
+      width: fit-content;
+      margin-left: auto;
+      margin-right: auto;
     }
 
     .page-title h1[contenteditable]:hover,
     .page-title p[contenteditable]:hover {
-      border-color: rgba(0, 0, 0, 0.12);
-      background: rgba(255, 255, 255, 0.6);
+      background: rgba(255, 255, 255, 0.65);
     }
 
     .page-title h1[contenteditable]:focus,
     .page-title p[contenteditable]:focus {
-      border-color: rgba(0, 0, 0, 0.25);
-      background: #fff;
-      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
+      background: var(--surface-white);
+      box-shadow: 0 2px 16px rgba(25, 28, 30, 0.09);
     }
 
     .ev-date[contenteditable] {
-      border-radius: 3px;
-      border: 1px solid transparent;
-      transition: border-color 0.15s, background 0.15s;
+      border-radius: 4px;
+      border: none;
+      transition: background 0.2s;
       outline: none;
       cursor: default;
+      padding: 1px 4px;
     }
 
     .ev-date[contenteditable]:hover {
-      border-color: rgba(0, 0, 0, 0.15);
-      background: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.55);
     }
 
     .ev-date[contenteditable]:focus {
-      border-color: rgba(0, 0, 0, 0.25);
-      background: #fff;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+      background: rgba(255, 255, 255, 0.90);
+      outline: none;
     }
 
     .footer-note {
       text-align: center;
-      font-size: 0.72rem;
-      color: #aaa;
-      margin-top: 2px;
+      font-size: 0.65rem;
+      color: var(--on-surface-var);
+      opacity: 0.45;
+      margin-top: 4px;
     }
 
-    /* (reload button is now inside side panel) */
+    /* ── Canvas wrap (zoom target / paper sheet) ── */
+    #canvas-wrap {
+      transform-origin: top center;
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s;
+      will-change: transform;
+      background-color: #ffffff;
+      box-shadow: 0 8px 40px rgba(25, 28, 30, 0.14), 0 2px 8px rgba(25, 28, 30, 0.08);
+      border-radius: 12px;
+      padding: 56px 48px;
+      width: max-content;
+      min-width: 800px;
+      min-height: 400px;
+      overflow: hidden; /* content must never spill outside paper */
+    }
+
+    /* ── Content scaler: fit-to-canvas transform target ── */
+    #content-scaler {
+      transform-origin: top left;
+      /* width / transform set dynamically by fitContentToCanvas() */
+    }
+
+    /* ── Zoom HUD ── */
+    #zoom-hud {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(25, 28, 30, 0.70);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: #fff;
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-family: var(--font-heading);
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+
+    #zoom-hud.visible {
+      opacity: 1;
+    }
+
+    /* ── Zoom Controls ── */
+    #zoom-controls {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 300;
+      display: flex;
+      gap: 4px;
+      background: rgba(25, 28, 30, 0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 20px;
+      padding: 4px;
+      opacity: 0;
+      transition: opacity 0.25s;
+      pointer-events: none;
+    }
+
+    #zoom-controls.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    #zoom-controls button {
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 50%;
+      background: transparent;
+      color: #fff;
+      font-size: 0.7rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    /* ── Add Event FAB ── */
+    #btn-add-event {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      z-index: 200;
+      display: none;
+      width: 44px;
+      height: 44px;
+      border: none;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      font-size: 1.3rem;
+      cursor: pointer;
+      box-shadow: var(--shadow-md);
+      transition: filter 0.15s, transform 0.15s;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #btn-add-event.visible {
+      display: flex;
+    }
+
+    #btn-add-event:hover {
+      filter: brightness(1.15);
+      transform: scale(1.08);
+    }
+
+    #btn-add-event:active {
+      transform: scale(0.93);
+    }
+
+    /* ── Add Event Modal ── */
+    #add-event-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 600;
+      align-items: center;
+      justify-content: center;
+      background: rgba(25, 28, 30, 0.30);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+    }
+
+    #add-event-modal.open {
+      display: flex;
+    }
+
+    .modal-card {
+      background: var(--surface-white);
+      border-radius: 22px;
+      box-shadow: var(--shadow-lg);
+      padding: 28px 28px 22px;
+      width: 370px;
+      max-width: 93vw;
+    }
+
+    .modal-card h3 {
+      font-family: var(--font-heading);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--on-surface);
+      margin-bottom: 20px;
+    }
+
+    .modal-field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-bottom: 14px;
+    }
+
+    .modal-field label {
+      font-family: var(--font-heading);
+      font-size: 0.5rem;
+      font-weight: 700;
+      color: var(--on-surface-var);
+      text-transform: uppercase;
+      letter-spacing: 0.9px;
+    }
+
+    .modal-field input,
+    .modal-field textarea {
+      background: var(--surface-high);
+      border: none;
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-size: 0.82rem;
+      font-family: var(--font-body);
+      color: var(--on-surface);
+      outline: none;
+      resize: none;
+      transition: background 0.15s, box-shadow 0.15s;
+    }
+
+    .modal-field input:focus,
+    .modal-field textarea:focus {
+      background: var(--primary-fixed);
+      box-shadow: 0 0 0 2px rgba(77, 85, 106, 0.18);
+    }
+
+    .modal-field textarea {
+      height: 80px;
+      line-height: 1.65;
+    }
+
+    .modal-hint {
+      font-size: 0.6rem;
+      color: var(--on-surface-var);
+      opacity: 0.6;
+      margin-top: 8px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 14px;
+    }
+
+    .modal-btn-cancel {
+      padding: 8px 18px;
+      background: var(--surface-high);
+      color: var(--on-surface-var);
+      border: none;
+      border-radius: 8px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--font-body);
+      transition: background 0.15s;
+    }
+
+    .modal-btn-cancel:hover {
+      background: var(--surface-highest);
+    }
+
+    .modal-btn-confirm {
+      padding: 8px 20px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--font-body);
+      transition: filter 0.15s, transform 0.1s;
+    }
+
+    .modal-btn-confirm:hover {
+      filter: brightness(1.12);
+    }
+
+    .modal-btn-confirm:active {
+      transform: scale(0.96);
+    }
+
+    /* ── Drag & Drop ── */
+    .ev-cell-top,
+    .ev-cell-bot {
+      position: relative;
+    }
+
+    .ev-drag-handle {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 22px;
+      height: 18px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      color: var(--on-surface-var);
+      opacity: 0.45;
+      z-index: 20;
+      font-size: 0.55rem;
+      border-radius: 4px;
+      transition: opacity 0.15s;
+    }
+
+    .ev-cell-top:hover .ev-drag-handle,
+    .ev-cell-bot:hover .ev-drag-handle {
+      display: flex;
+    }
+
+    .ev-drag-handle:hover {
+      opacity: 0.9;
+      background: rgba(77, 85, 106, 0.08);
+    }
+
+    .ev-drag-handle:active {
+      cursor: grabbing;
+    }
+
+    .ev-cell-top.drag-over,
+    .ev-cell-bot.drag-over {
+      background: rgba(218, 226, 253, 0.45);
+      border-radius: 8px;
+      outline: 2px dashed rgba(77, 85, 106, 0.5);
+      outline-offset: 3px;
+    }
+
+    .ev-cell-top.dragging,
+    .ev-cell-bot.dragging {
+      opacity: 0.28;
+    }
+
+    /* ── Delete button on hover ── */
+    .ev-delete-btn {
+      position: absolute;
+      top: 1px;
+      right: 2px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fee2e2;
+      color: #be123c;
+      border: none;
+      font-size: 0.62rem;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      transition: background 0.12s, transform 0.1s;
+      line-height: 1;
+    }
+
+    .ev-cell-top:hover .ev-delete-btn,
+    .ev-cell-bot:hover .ev-delete-btn {
+      display: flex;
+    }
+
+    .ev-delete-btn:hover {
+      background: #fca5a5;
+      transform: scale(1.15);
+    }
+
+    .ev-delete-btn:active {
+      transform: scale(0.9);
+    }
+
+    /* ════════════════════════════════════════════
+       VISUAL STYLE THEMES
+       Applied via body[data-vstyle="..."]
+       ════════════════════════════════════════════ */
+
+    /* ── CARDS: description as floating card ── */
+    body[data-vstyle="cards"] .ev-desc {
+      background: var(--surface-white);
+      box-shadow: var(--shadow-sm);
+      border-radius: 10px;
+      padding: 8px 10px;
+    }
+
+    body[data-vstyle="cards"] .ev-desc:hover {
+      box-shadow: var(--shadow-md);
+    }
+
+    body[data-vstyle="cards"] .ev-date {
+      background: var(--primary);
+      color: #fff !important;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 0.72rem !important;
+    }
+
+    body[data-vstyle="cards"] .ev-circle {
+      border-radius: 14px;
+      /* rounded square */
+    }
+
+    body[data-vstyle="cards"] .tl-bar-bg {
+      height: 8px;
+    }
+
+    /* ── MINIMAL: thin line, no fill circles, icon only ── */
+    body[data-vstyle="minimal"] .ev-circle {
+      width: 38px;
+      height: 38px;
+      background: transparent !important;
+      box-shadow: none !important;
+      border: 2.5px solid currentColor;
+    }
+
+    body[data-vstyle="minimal"] .ev-circle i {
+      color: inherit !important;
+      opacity: 0.85;
+    }
+
+    body[data-vstyle="minimal"] .tl-bar-bg {
+      height: 4px;
+      border-radius: 2px;
+    }
+
+    body[data-vstyle="minimal"] .ev-dot {
+      width: 12px;
+      height: 12px;
+      border-width: 2px;
+    }
+
+    body[data-vstyle="minimal"] .ev-stem {
+      height: 32px;
+      opacity: 0.35;
+    }
+
+    body[data-vstyle="minimal"] .ev-desc {
+      opacity: 0.82;
+      font-size: 0.68rem;
+    }
+
+    /* ── BOLD: big circles, thick bar, heavy type ── */
+    body[data-vstyle="bold"] .ev-circle {
+      width: 66px;
+      height: 66px;
+      box-shadow: 0 6px 20px var(--col, rgba(0, 0, 0, 0.25));
+    }
+
+    body[data-vstyle="bold"] .ev-circle i {
+      font-size: 1.4rem;
+    }
+
+    body[data-vstyle="bold"] .tl-bar-bg {
+      height: 18px;
+      border-radius: 9px;
+    }
+
+    body[data-vstyle="bold"] .ev-dot {
+      width: 22px;
+      height: 22px;
+      border-width: 4px;
+    }
+
+    body[data-vstyle="bold"] .ev-stem {
+      width: 3px;
+      height: 48px;
+    }
+
+    body[data-vstyle="bold"] .ev-date {
+      font-size: 1.05rem !important;
+      font-weight: 800;
+    }
+
+    body[data-vstyle="bold"] .ev-desc {
+      font-size: 0.78rem !important;
+      font-weight: 600;
+    }
+
+    /* ── DIAMOND: diamond-shaped markers ── */
+    body[data-vstyle="diamond"] .ev-circle {
+      border-radius: 4px;
+      transform: rotate(45deg);
+      width: 46px;
+      height: 46px;
+    }
+
+    body[data-vstyle="diamond"] .ev-circle i {
+      transform: rotate(-45deg);
+      display: block;
+    }
+
+    body[data-vstyle="diamond"] .ev-circle:hover {
+      transform: rotate(45deg) scale(1.1);
+      filter: brightness(1.12);
+    }
+
+    body[data-vstyle="diamond"] .tl-bar-bg {
+      height: 6px;
+    }
+
+    body[data-vstyle="diamond"] .ev-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      transform: translate(-50%, -50%) rotate(45deg);
+    }
+
+    /* ── TIMELINE (horizontal flag style): text above/below offset ── */
+    body[data-vstyle="flag"] .ev-desc {
+      background: var(--surface-white);
+      border-left: 3px solid;
+      border-radius: 0 8px 8px 0;
+      padding: 6px 8px;
+      box-shadow: var(--shadow-sm);
+      text-align: left !important;
+    }
+
+    body[data-vstyle="flag"] .ev-date {
+      text-align: left !important;
+      padding-left: 4px;
+    }
+
+    body[data-vstyle="flag"] .ev-circle {
+      border-radius: 50%;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+    }
+
+    body[data-vstyle="flag"] .tl-bar-bg {
+      height: 6px;
+    }
+
+    /* ── NEON: glowing circles + dark desc ── */
+    body[data-vstyle="neon"] .ev-circle {
+      background: rgba(0, 0, 0, 0.55) !important;
+      border: 2px solid var(--col, #7c3aed);
+      box-shadow: 0 0 10px var(--col, #7c3aed), 0 0 22px var(--col, rgba(124,58,237,0.35));
+    }
+
+    body[data-vstyle="neon"] .ev-circle i {
+      color: var(--col, #c4b5fd) !important;
+      filter: drop-shadow(0 0 5px currentColor);
+    }
+
+    body[data-vstyle="neon"] .tl-bar-bg {
+      height: 6px;
+      box-shadow: 0 0 10px var(--primary, #7c3aed);
+    }
+
+    body[data-vstyle="neon"] .ev-stem {
+      box-shadow: 0 0 5px rgba(124, 58, 237, 0.5);
+    }
+
+    body[data-vstyle="neon"] .ev-desc {
+      background: rgba(10, 8, 24, 0.5);
+      border: 1px solid rgba(124, 58, 237, 0.3);
+      border-radius: 8px;
+      padding: 6px 8px;
+    }
+
+    body[data-vstyle="neon"] .ev-date {
+      font-weight: 700;
+    }
+
+    /* ── HEXAGON: hexagonal markers ── */
+    body[data-vstyle="hexagon"] .ev-circle {
+      clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+      border-radius: 0;
+      width: 52px;
+      height: 52px;
+    }
+
+    body[data-vstyle="hexagon"] .ev-circle:hover {
+      filter: brightness(1.15);
+      transform: scale(1.1);
+    }
+
+    body[data-vstyle="hexagon"] .ev-dot {
+      clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+      border-radius: 0;
+      width: 16px;
+      height: 16px;
+    }
+
+    body[data-vstyle="hexagon"] .tl-bar-bg {
+      height: 8px;
+    }
+
+    /* ── GLASS: frosted glass effect ── */
+    body[data-vstyle="glass"] .ev-circle {
+      background: rgba(255, 255, 255, 0.22) !important;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1.5px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+    }
+
+    body[data-vstyle="glass"] .ev-circle i {
+      color: rgba(255, 255, 255, 0.9) !important;
+    }
+
+    body[data-vstyle="glass"] .ev-desc {
+      background: rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border: 1px solid rgba(255, 255, 255, 0.38);
+      border-radius: 12px;
+      padding: 8px 10px;
+    }
+
+    body[data-vstyle="glass"] .tl-bar-bg {
+      background: rgba(255, 255, 255, 0.28) !important;
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      height: 10px;
+      border-radius: 5px;
+    }
+
+    /* ── PILL: pill-shaped elements ── */
+    body[data-vstyle="pill"] .ev-circle {
+      border-radius: 50px;
+      width: 64px;
+      height: 38px;
+    }
+
+    body[data-vstyle="pill"] .ev-date {
+      background: var(--primary);
+      color: #fff !important;
+      padding: 2px 10px;
+      border-radius: 50px;
+      font-size: 0.7rem !important;
+      font-weight: 700;
+    }
+
+    body[data-vstyle="pill"] .tl-bar-bg {
+      height: 10px;
+      border-radius: 50px;
+    }
+
+    body[data-vstyle="pill"] .ev-dot {
+      border-radius: 50px;
+      width: 20px;
+      height: 10px;
+      transform: translate(-50%, -50%);
+    }
+
+    body[data-vstyle="pill"] .ev-desc {
+      border-radius: 12px;
+      padding: 6px 10px;
+    }
+
+    /* ── COMPACT: dense small style ── */
+    body[data-vstyle="compact"] .ev-circle {
+      width: 32px;
+      height: 32px;
+    }
+
+    body[data-vstyle="compact"] .ev-circle i {
+      font-size: 0.72rem;
+    }
+
+    body[data-vstyle="compact"] .ev-stem {
+      height: 22px;
+    }
+
+    body[data-vstyle="compact"] .ev-dot {
+      width: 10px;
+      height: 10px;
+    }
+
+    body[data-vstyle="compact"] .ev-date {
+      font-size: 0.62rem !important;
+    }
+
+    body[data-vstyle="compact"] .ev-desc {
+      font-size: 0.65rem;
+    }
+
+    body[data-vstyle="compact"] .tl-bar-bg {
+      height: 6px;
+    }
+
+    /* ── Recent icons section in picker ── */
+    #ip-recent-row {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 4px;
+      margin-bottom: 6px;
+    }
 
     /* ── Print / PDF ── */
     @media print {
@@ -692,7 +1560,21 @@
       body {
         padding: 0;
         background: #fff;
+        overflow: visible;
+        height: auto;
         transform-origin: top left;
+      }
+
+      #canvas-viewport {
+        position: static !important;
+        overflow: visible !important;
+        background: transparent !important;
+        left: 0 !important;
+      }
+
+      #canvas-stage {
+        padding: 0 !important;
+        min-height: unset !important;
       }
 
       body.print-scaled {
@@ -703,7 +1585,10 @@
       #ctrl-toggle,
       #ctrl-panel,
       #icon-picker,
-      #icon-picker-backdrop {
+      #icon-picker-backdrop,
+      #top-bar,
+      #btn-add-event,
+      #zoom-hud {
         display: none !important;
       }
 
@@ -713,6 +1598,7 @@
       .page-title p {
         border: none !important;
         box-shadow: none !important;
+        background: transparent !important;
       }
 
       .ev-circle {
@@ -726,38 +1612,158 @@
       .page-title {
         margin-bottom: 8px;
       }
+
+      #canvas-wrap {
+        background: transparent !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: auto !important;
+        height: auto !important;
+        min-width: auto !important;
+        min-height: auto !important;
+        overflow: visible !important;
+        transform: none !important;
+      }
+
+      #content-scaler {
+        transform: none !important;
+        width: auto !important;
+      }
     }
   </style>
 </head>
 
 <body>
 
-  <!-- Upload Area -->
-  <div id="upload-area">
-    <i class="fa-solid fa-file-excel"></i>
-    <h2>นำเข้าข้อมูลจากไฟล์ Excel / CSV</h2>
-    <p>ลากไฟล์ .xlsx หรือ .csv มาวางที่นี่ หรือคลิกเลือกไฟล์<br />
-      คอลัมน์: <strong>NO</strong> | <strong>DATE</strong> | <strong>EVENT</strong></p>
-    <button class="btn-upload" onclick="document.getElementById('file-input').click()">เลือกไฟล์ Excel / CSV</button>
-    <div class="btn-row">
-      <button class="btn-demo" onclick="downloadTemplate()">ดาวน์โหลด Template</button>
-      <button class="btn-demo" onclick="document.getElementById('project-input').click()">เปิดงานเดิม (.json)</button>
-      <button class="btn-demo" onclick="loadDemo()">ดูตัวอย่าง Demo</button>
-    </div>
-    <input type="file" id="file-input" accept=".xlsx,.xls,.csv" />
+  <!-- Top Bar -->
+  <div id="top-bar">
+    <button class="tb-btn tb-icon-only" id="tb-sidebar-toggle" title="ซ่อน/แสดง Sidebar" onclick="toggleSidebar()">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <span class="tb-brand">J Timeline</span>
+    <div class="tb-sep"></div>
+    <button class="tb-btn tb-icon-only" id="btn-undo" title="Undo (Ctrl+Z)" onclick="undo()" disabled>
+      <i class="fa-solid fa-rotate-left"></i>
+    </button>
+    <button class="tb-btn tb-icon-only" id="btn-redo" title="Redo (Ctrl+Y)" onclick="redo()" disabled>
+      <i class="fa-solid fa-rotate-right"></i>
+    </button>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" onclick="openAddEventModal()" title="เพิ่ม Event ใหม่">
+      <i class="fa-solid fa-plus"></i> เพิ่ม Event
+    </button>
+    <button class="tb-btn tb-icon-only" id="btn-fullscreen" title="แสดงเต็มจอ">
+      <i class="fa-solid fa-expand"></i>
+    </button>
+    <div class="tb-spacer"></div>
+    <select id="canvas-size-select" title="ขนาด Canvas / PDF">
+      <option value="auto">Auto (ตามเนื้อหา)</option>
+      <option value="a4l" selected>A4 Landscape</option>
+      <option value="a4p">A4 Portrait</option>
+      <option value="a3l">A3 Landscape</option>
+      <option value="a3p">A3 Portrait</option>
+      <option value="a5l">A5 Landscape</option>
+      <option value="letterl">Letter Landscape</option>
+    </select>
+    <div class="tb-sep"></div>
+    <button class="tb-btn tb-pdf" onclick="exportPDF()">
+      <i class="fa-solid fa-file-pdf"></i> PDF
+    </button>
+    <button class="tb-btn tb-save" onclick="exportProject()">
+      <i class="fa-solid fa-floppy-disk"></i> บันทึก
+    </button>
+    <button class="tb-btn" onclick="document.getElementById('project-input').click()" title="เปิดงานเดิม">
+      <i class="fa-solid fa-folder-open"></i>
+    </button>
+    <button class="tb-btn tb-reset" onclick="clearSession().then(() => location.reload())" title="โหลดไฟล์ใหม่">
+      <i class="fa-solid fa-rotate-left"></i>
+    </button>
   </div>
 
-  <!-- Title area (hidden until data loaded) -->
-  <div class="page-title" id="page-title" style="display:none;">
-    <h1 contenteditable="true" data-id="title-h1">Timeline</h1>
-    <p contenteditable="true" data-id="title-sub">ลำดับเหตุการณ์</p>
-    <p contenteditable="true" data-id="title-sub2" class="sub2"></p>
-  </div>
+  <!-- Canvas Viewport: fixed, scrollable, holds the paper stage -->
+  <div id="canvas-viewport">
+    <div id="canvas-stage">
 
-  <!-- Floating gear toggle -->
-  <button id="ctrl-toggle" onclick="togglePanel()">
-    <i class="fa-solid fa-gear"></i>
+      <!-- Upload Area (shown before data is loaded) -->
+      <div id="upload-area">
+        <i class="fa-solid fa-file-excel"></i>
+        <h2>นำเข้าข้อมูลจากไฟล์ Excel / CSV</h2>
+        <p>ลากไฟล์ .xlsx หรือ .csv มาวางที่นี่ หรือคลิกเลือกไฟล์<br />
+          คอลัมน์: <strong>NO</strong> | <strong>DATE</strong> | <strong>EVENT</strong></p>
+        <button class="btn-upload" onclick="document.getElementById('file-input').click()">เลือกไฟล์ Excel / CSV</button>
+        <div class="btn-row">
+          <button class="btn-demo" onclick="downloadTemplate()">ดาวน์โหลด Template</button>
+          <button class="btn-demo" onclick="document.getElementById('project-input').click()">เปิดงานเดิม (.json)</button>
+          <button class="btn-demo" onclick="loadDemo()">ดูตัวอย่าง Demo</button>
+        </div>
+        <input type="file" id="file-input" accept=".xlsx,.xls,.csv" />
+      </div>
+
+      <!-- Canvas wrap: the paper sheet / zoom target -->
+      <div id="canvas-wrap" style="display: none;">
+
+        <!-- content-scaler: scaled down when content > canvas bounds -->
+        <div id="content-scaler">
+
+          <!-- Title area (hidden until data loaded) -->
+          <div class="page-title" id="page-title" style="display:none;">
+            <h1 contenteditable="true" data-id="title-h1">Timeline</h1>
+            <p contenteditable="true" data-id="title-sub">ลำดับเหตุการณ์</p>
+            <p contenteditable="true" data-id="title-sub2" class="sub2"></p>
+          </div>
+
+          <div id="root"></div>
+
+        </div><!-- /content-scaler -->
+      </div><!-- /canvas-wrap -->
+
+    </div><!-- /canvas-stage -->
+  </div><!-- /canvas-viewport -->
+
+  <!-- Floating gear toggle (hidden, legacy) -->
+  <button id="ctrl-toggle"></button>
+
+  <!-- Add Event FAB (hidden, replaced by top bar button) -->
+  <button id="btn-add-event" onclick="openAddEventModal()" title="เพิ่ม Event ใหม่" style="display:none!important">
+    <i class="fa-solid fa-plus"></i>
   </button>
+
+  <!-- Zoom HUD -->
+  <div id="zoom-hud">
+    <i class="fa-solid fa-magnifying-glass" style="font-size:0.55rem;opacity:0.65"></i>
+    <span id="zoom-val">100%</span>
+  </div>
+
+  <!-- Zoom Controls -->
+  <div id="zoom-controls">
+    <button id="zoom-out-btn" title="ย่อ (-)"><i class="fa-solid fa-minus"></i></button>
+    <button id="zoom-in-btn" title="ขยาย (+)"><i class="fa-solid fa-plus"></i></button>
+  </div>
+
+  <!-- Add Event Modal -->
+  <div id="add-event-modal">
+    <div class="modal-card">
+      <h3><i class="fa-solid fa-calendar-plus" style="opacity:0.55;margin-right:8px"></i>เพิ่ม Event ใหม่</h3>
+      <div class="modal-field">
+        <label>วันที่</label>
+        <input type="text" id="modal-date" placeholder="เช่น 1 ม.ค. 2568" autocomplete="off" />
+      </div>
+      <div class="modal-field">
+        <label>รายละเอียด</label>
+        <textarea id="modal-desc" placeholder="ระบุรายละเอียดเหตุการณ์..."></textarea>
+      </div>
+      <p class="modal-hint"><i class="fa-solid fa-keyboard" style="margin-right:4px"></i>Ctrl+Enter เพื่อยืนยัน · Esc
+        เพื่อยกเลิก</p>
+      <div class="modal-actions">
+        <button class="modal-btn-cancel" onclick="closeAddEventModal()">ยกเลิก</button>
+        <button class="modal-btn-confirm" onclick="confirmAddEvent()">
+          <i class="fa-solid fa-plus" style="font-size:0.6rem;margin-right:4px"></i>เพิ่ม Event
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Icon picker backdrop + popup -->
   <div id="icon-picker-backdrop"></div>
@@ -769,13 +1775,66 @@
     <div class="ip-grid" id="ip-grid"></div>
   </div>
 
-  <div id="root"></div>
-
-  <!-- Side control panel -->
+  <!-- Left sidebar control panel -->
   <div id="ctrl-panel">
     <div class="cp-title">
       <span><i class="fa-solid fa-sliders"></i> ปรับแต่ง</span>
-      <button onclick="togglePanel()" title="ปิด">&times;</button>
+      <button onclick="toggleSidebar()" title="ปิด">&times;</button>
+    </div>
+
+    <div class="ctrl-group">
+      <span class="ctrl-label">สไตล์การแสดงผล</span>
+      <div class="ctrl-row">
+        <select id="vstyle-select" class="theme-select">
+          <option value="classic">คลาสสิก (Classic)</option>
+          <option value="cards">การ์ด (Cards)</option>
+          <option value="minimal">มินิมอล (Minimal)</option>
+          <option value="bold">โบลด์ (Bold)</option>
+          <option value="diamond">ไดมอนด์ (Diamond)</option>
+          <option value="flag">แฟล็ก (Flag)</option>
+          <option value="neon">นีออน (Neon)</option>
+          <option value="hexagon">หกเหลี่ยม (Hexagon)</option>
+          <option value="glass">กระจก (Glass)</option>
+          <option value="pill">พิล (Pill)</option>
+          <option value="compact">คอมแพค (Compact)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="ctrl-group">
+      <span class="ctrl-label">ฟอนต์เนื้อหา</span>
+      <div class="ctrl-row">
+        <select id="font-body-select" class="theme-select">
+          <option value="Sarabun">Sarabun (ค่าเริ่มต้น)</option>
+          <option value="Noto Sans Thai">Noto Sans Thai</option>
+          <option value="IBM Plex Sans Thai">IBM Plex Sans Thai</option>
+          <option value="Kanit">Kanit</option>
+          <option value="Mitr">Mitr</option>
+          <option value="Prompt">Prompt</option>
+          <option value="K2D">K2D</option>
+          <option value="Itim">Itim (ลายมือ)</option>
+          <option value="Trirong">Trirong (Serif)</option>
+          <option value="Pridi">Pridi (Serif)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="ctrl-group">
+      <span class="ctrl-label">ฟอนต์หัวข้อ</span>
+      <div class="ctrl-row">
+        <select id="font-heading-select" class="theme-select">
+          <option value="Manrope">Manrope (ค่าเริ่มต้น)</option>
+          <option value="Inter">Inter</option>
+          <option value="Poppins">Poppins</option>
+          <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
+          <option value="Outfit">Outfit</option>
+          <option value="Space Grotesk">Space Grotesk</option>
+          <option value="DM Sans">DM Sans</option>
+          <option value="Raleway">Raleway</option>
+          <option value="Sarabun">Sarabun</option>
+          <option value="Kanit">Kanit</option>
+        </select>
+      </div>
     </div>
 
     <div class="ctrl-group">
@@ -797,6 +1856,14 @@
     </div>
 
     <div class="ctrl-group">
+      <span class="ctrl-label">สีกระดาษ</span>
+      <div class="ctrl-row">
+        <span class="size-val" style="flex:1; text-align:left; font-size:0.65rem;">พื้นหลัง Canvas</span>
+        <input type="color" id="canvas-bg-clr" title="สีพื้นหลัง Canvas" value="#ffffff" />
+      </div>
+    </div>
+
+    <div class="ctrl-group">
       <span class="ctrl-label">ข้อความ</span>
       <div class="ctrl-row">
         <button class="ctrl-btn" id="fs-dn" title="เล็กลง">A&minus;</button>
@@ -814,7 +1881,7 @@
         <span class="size-val" id="w-val">&mdash;</span>
         <button class="ctrl-btn" id="w-up" title="กว้างขึ้น">+</button>
       </div>
-      <input id="width-slider" type="range" min="60" max="2000" value="100" />
+      <input id="width-slider" type="range" min="60" max="2000" value="195" />
     </div>
 
     <div class="ctrl-group">
@@ -1007,8 +2074,8 @@
           const descEl = document.querySelector(`[data-id="desc-${Math.floor(idx / COLS)}-${idx % COLS}"]`);
           const dateEl = document.querySelector(`[data-id="date-${Math.floor(idx / COLS)}-${idx % COLS}"]`);
           return {
-            date: dateEl ? dateEl.textContent : ev.date,
-            desc: descEl ? descEl.textContent : ev.desc,
+            date: dateEl ? getEditableText(dateEl) : ev.date,
+            desc: descEl ? getEditableText(descEl) : ev.desc,
             icon: ev.icon,
           };
         });
@@ -1032,8 +2099,14 @@
     }
 
     function gatherSettings() {
+      const fonts = getCurrentFonts();
       return {
+        vstyle: document.getElementById('vstyle-select')?.value || 'classic',
+        fontBody:    fonts.body,
+        fontHeading: fonts.heading,
         theme: document.getElementById('theme-select')?.value || 'default',
+        canvasSize: document.getElementById('canvas-size-select')?.value || 'auto',
+        canvasBg: document.getElementById('canvas-bg-clr')?.value || '#ffffff',
         descFS: document.querySelector('.ev-desc')?.style.fontSize || '',
         descW: document.querySelector('.ev-desc')?.style.width || '',
         descClr: document.getElementById('desc-clr')?.value || '#4a5568',
@@ -1069,7 +2142,7 @@
 
         document.getElementById('upload-area').style.display = 'none';
         document.getElementById('page-title').style.display = 'block';
-        document.getElementById('ctrl-toggle').classList.add('visible');
+        showAppUI();
 
         if (session.settings && session.settings.theme && palettes[session.settings.theme]) {
           palette = palettes[session.settings.theme];
@@ -1095,13 +2168,32 @@
       const titleSub = document.querySelector('#page-title p');
       const titleSub2 = document.querySelector('#page-title p.sub2');
 
+      if (s.vstyle) applyVisualStyle(s.vstyle);
+      if (s.fontBody || s.fontHeading) applyFont(s.fontBody, s.fontHeading);
       if (s.theme && palettes[s.theme]) {
         const themeSelect = document.getElementById('theme-select');
         if (themeSelect) themeSelect.value = s.theme;
       }
+      if (s.canvasSize) {
+        const canvasSel = document.getElementById('canvas-size-select');
+        if (canvasSel) canvasSel.value = s.canvasSize;
+      }
+      if (s.canvasBg) {
+        const wrap = document.getElementById('canvas-wrap');
+        if (wrap) wrap.style.backgroundColor = s.canvasBg;
+        const bgInp = document.getElementById('canvas-bg-clr');
+        if (bgInp) bgInp.value = s.canvasBg;
+      }
 
       if (s.descFS) allDesc.forEach(el => el.style.fontSize = s.descFS);
-      if (s.descW) allDesc.forEach(el => el.style.width = s.descW);
+      if (s.descW) {
+        const w = parseFloat(s.descW);
+        allDesc.forEach(el => {
+          el.style.width = w + 'px';
+          el.style.marginLeft = (w / -2) + 'px';
+          el.style.marginRight = (w / -2) + 'px';
+        });
+      }
       if (s.descClr) {
         allDesc.forEach(el => el.style.color = s.descClr);
         document.getElementById('desc-clr').value = s.descClr;
@@ -1251,18 +2343,37 @@
       return 'fa-circle-dot';
     }
 
+    /* ── Extract text from contenteditable preserving line breaks ── */
+    function getEditableText(el) {
+      if (!el) return '';
+      const clone = el.cloneNode(true);
+      /* <br> → \n */
+      clone.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+      /* block elements (div/p inserted by browser on Enter) → \n + content */
+      clone.querySelectorAll('div, p').forEach(block => {
+        const t = document.createTextNode('\n' + block.textContent);
+        block.replaceWith(t);
+      });
+      return clone.textContent.replace(/\n{3,}/g, '\n\n').trim();
+    }
+
     /* ── Wrap Thai names to prevent line-break ── */
     function wrapNames(str) {
       const N = '\u00A0';
-      let s = str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      const W = (t) => `<span class="nowrap">${t}</span>`;
-      s = s.replace(/(ศ\.กิตติคุณ|ศ\.พิเศษ)\s+(\S+)\s+(\S+)/g, (_, p, f, l) => W(`${p}${N}${f}${N}${l}`));
-      s = s.replace(/(นางสาว)\s+(\S+)\s+(\S+)/g, (_, p, f, l) => W(`${p}${N}${f}${N}${l}`));
-      s = s.replace(/(นาย|นาง)\s+(\S+)\s+(\S+)/g, (_, p, f, l) => W(`${p}${N}${f}${N}${l}`));
-      s = s.replace(/(นาย|นาง)\s+(\S+)/g, (_, p, f) => W(`${p}${N}${f}`));
-      s = s.replace(/((?:น\.ส\.|รศ\.)\S+)\s+(\S+)/g, (_, pf, l) => W(`${pf}${N}${l}`));
-      s = s.replace(/(พระ(?:ครูปลัด|ปลัด|ครู)\S+)(?:\s+([^\s\/\(]+))?/g, (_, m, x) => x ? W(`${m}${N}${x}`) : W(m));
-      return s;
+      /* escape line-breaks before HTML-escaping so they survive */
+      const lines = str.split('\n');
+      const processed = lines.map(line => {
+        let s = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const W = (t) => `<span class="nowrap">${t}</span>`;
+        s = s.replace(/(ศ\.กิตติคุณ|ศ\.พิเศษ)\s+(\S+)\s+(\S+)/g, (_, p, f, l) => W(`${p}${N}${f}${N}${l}`));
+        s = s.replace(/(นางสาว)\s+(\S+)\s+(\S+)/g, (_, p, f, l) => W(`${p}${N}${f}${N}${l}`));
+        s = s.replace(/(นาย|นาง)\s+(\S+)\s+(\S+)/g, (_, p, f, l) => W(`${p}${N}${f}${N}${l}`));
+        s = s.replace(/(นาย|นาง)\s+(\S+)/g, (_, p, f) => W(`${p}${N}${f}`));
+        s = s.replace(/((?:น\.ส\.|รศ\.)\S+)\s+(\S+)/g, (_, pf, l) => W(`${pf}${N}${l}`));
+        s = s.replace(/(พระ(?:ครูปลัด|ปลัด|ครู)\S+)(?:\s+([^\s\/\(]+))?/g, (_, m, x) => x ? W(`${m}${N}${x}`) : W(m));
+        return s;
+      });
+      return processed.join('<br>');
     }
 
     /* ── Icon catalog for picker ── */
@@ -1290,6 +2401,14 @@
           'fa-magnifying-glass', 'fa-building-shield', 'fa-user-shield', 'fa-eye',
           'fa-fingerprint', 'fa-id-card', 'fa-id-badge', 'fa-stamp',
           'fa-triangle-exclamation', 'fa-ban', 'fa-lock', 'fa-unlock',
+        ]
+      },
+      {
+        cat: 'ตำรวจ / ความมั่นคง', icons: [
+          'fa-vest', 'fa-radio', 'fa-binoculars', 'fa-person-running',
+          'fa-car-burst', 'fa-truck-medical', 'fa-fire-extinguisher', 'fa-landmark-dome',
+          'fa-dog', 'fa-user-secret', 'fa-house-chimney-crack', 'fa-box-archive',
+          'fa-key', 'fa-newspaper', 'fa-map-pin',
         ]
       },
       {
@@ -1348,9 +2467,35 @@
     const pickerSearch = document.getElementById('ip-search');
     const pickerBackdrop = document.getElementById('icon-picker-backdrop');
 
+    /* ── Recent icons (persisted in localStorage) ── */
+    let recentIcons = [];
+    try { recentIcons = JSON.parse(localStorage.getItem('tlRecentIcons') || '[]'); } catch (e) { }
+
+    function addRecentIcon(ic) {
+      recentIcons = [ic, ...recentIcons.filter(x => x !== ic)].slice(0, 12);
+      try { localStorage.setItem('tlRecentIcons', JSON.stringify(recentIcons)); } catch (e) { }
+    }
+
     function buildPickerGrid(filter) {
       pickerGrid.innerHTML = '';
       const q = (filter || '').toLowerCase();
+      const curIcon = pickerTarget ? allEvents[pickerTarget.eventIndex]?.icon : null;
+
+      /* Recent icons row (show only when no search filter) */
+      if (!q && recentIcons.length > 0) {
+        const recentLabel = document.createElement('div');
+        recentLabel.className = 'ip-cat';
+        recentLabel.textContent = 'ใช้ล่าสุด';
+        pickerGrid.appendChild(recentLabel);
+        recentIcons.forEach(ic => {
+          const item = document.createElement('div');
+          item.className = 'ip-item' + (ic === curIcon ? ' active' : '');
+          item.innerHTML = `<i class="fa-solid ${ic}"></i>`;
+          item.addEventListener('click', () => selectIcon(ic));
+          pickerGrid.appendChild(item);
+        });
+      }
+
       iconCatalog.forEach(cat => {
         const filtered = cat.icons.filter(ic => !q || ic.includes(q));
         if (filtered.length === 0) return;
@@ -1360,10 +2505,7 @@
         pickerGrid.appendChild(catEl);
         filtered.forEach(ic => {
           const item = document.createElement('div');
-          item.className = 'ip-item';
-          if (pickerTarget && allEvents[pickerTarget.eventIndex].icon === ic) {
-            item.classList.add('active');
-          }
+          item.className = 'ip-item' + (ic === curIcon ? ' active' : '');
           item.innerHTML = `<i class="fa-solid ${ic}"></i>`;
           item.addEventListener('click', () => selectIcon(ic));
           pickerGrid.appendChild(item);
@@ -1400,10 +2542,12 @@
 
     function selectIcon(iconClass) {
       if (!pickerTarget) return;
+      pushUndo();
       const ev = allEvents[pickerTarget.eventIndex];
       ev.icon = iconClass;
       const ico = pickerTarget.circleEl.querySelector('i');
       ico.className = `fa-solid ${iconClass}`;
+      addRecentIcon(iconClass);
       closePicker();
       scheduleSave();
     }
@@ -1492,6 +2636,56 @@
           cell.className = isAbove ? 'ev-cell-top' : 'ev-cell-bot';
           cell.style.gridColumn = gcol;
           cell.style.gridRow = isAbove ? '1' : '3';
+          cell.dataset.evIdx = evIdx;
+
+          /* ── Drag handle ── */
+          const dragHandle = document.createElement('div');
+          dragHandle.className = 'ev-drag-handle';
+          dragHandle.innerHTML = '<i class="fa-solid fa-grip-vertical"></i>';
+          dragHandle.title = 'ลากเพื่อย้าย';
+          dragHandle.addEventListener('mousedown', () => { cell.draggable = true; });
+
+          cell.addEventListener('dragstart', (e) => {
+            dragSrcIdx = evIdx;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', String(evIdx));
+            setTimeout(() => cell.classList.add('dragging'), 0);
+          });
+          cell.addEventListener('dragend', () => {
+            cell.draggable = false;
+            cell.classList.remove('dragging');
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+          });
+          cell.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (evIdx !== dragSrcIdx) cell.classList.add('drag-over');
+          });
+          cell.addEventListener('dragleave', () => cell.classList.remove('drag-over'));
+          cell.addEventListener('drop', (e) => {
+            e.preventDefault();
+            cell.classList.remove('drag-over');
+            if (dragSrcIdx === null || dragSrcIdx === evIdx) return;
+            pushUndo();
+            const s = gatherSettings();
+            const moved = allEvents.splice(dragSrcIdx, 1)[0];
+            const target = dragSrcIdx < evIdx ? evIdx - 1 : evIdx;
+            allEvents.splice(target, 0, moved);
+            dragSrcIdx = null;
+            renderTimeline();
+            restoreSettings(s);
+            scheduleSave();
+          });
+
+          /* ── Delete button ── */
+          const delBtn = document.createElement('button');
+          delBtn.className = 'ev-delete-btn';
+          delBtn.innerHTML = '&times;';
+          delBtn.title = 'ลบ Event นี้';
+          delBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteEvent(evIdx); });
+
+          cell.appendChild(dragHandle);
+          cell.appendChild(delBtn);
           cell.appendChild(stem);
           cell.appendChild(circle);
           cell.appendChild(dateEl);
@@ -1501,6 +2695,13 @@
 
         root.appendChild(section);
       });
+
+      /* Show Add-Event FAB */
+      const addFab = document.getElementById('btn-add-event');
+      if (addFab) addFab.classList.add('visible');
+
+      /* Fit content into canvas (RAF-deferred so DOM is fully painted) */
+      fitContentToCanvas();
 
       initControls();
     }
@@ -1573,7 +2774,7 @@
         /* Show timeline, hide upload */
         document.getElementById('upload-area').style.display = 'none';
         document.getElementById('page-title').style.display = 'block';
-        document.getElementById('ctrl-toggle').classList.add('visible');
+        showAppUI();
 
         renderTimeline();
         scheduleSave();
@@ -1601,13 +2802,109 @@
       if (e.dataTransfer.files.length) processFile(e.dataTransfer.files[0]);
     });
 
-    /* ── Side panel toggle ── */
-    function togglePanel() {
-      const panel = document.getElementById('ctrl-panel');
-      const toggle = document.getElementById('ctrl-toggle');
-      panel.classList.toggle('open');
-      toggle.classList.toggle('open');
+    /* ── Visual style system ── */
+    function applyVisualStyle(name) {
+      document.body.dataset.vstyle = name || 'classic';
+      const sel = document.getElementById('vstyle-select');
+      if (sel) sel.value = name || 'classic';
     }
+
+    /* ═══════════════════════════════════════════════════
+       Font catalog + dynamic loader
+       ═══════════════════════════════════════════════════ */
+    const fontCatalog = {
+      body: {
+        'Sarabun':             null, /* pre-loaded in @import */
+        'Noto Sans Thai':      'Noto+Sans+Thai:wght@300;400;500;600;700',
+        'IBM Plex Sans Thai':  'IBM+Plex+Sans+Thai:wght@300;400;500;600;700',
+        'Kanit':               'Kanit:wght@300;400;500;600;700',
+        'Mitr':                'Mitr:wght@300;400;500;600;700',
+        'Prompt':              'Prompt:wght@300;400;500;600;700',
+        'K2D':                 'K2D:wght@300;400;500;600;700',
+        'Itim':                'Itim',
+        'Trirong':             'Trirong:wght@300;400;500;600;700',
+        'Pridi':               'Pridi:wght@300;400;500;600;700',
+      },
+      heading: {
+        'Manrope':             null, /* pre-loaded */
+        'Inter':               'Inter:wght@400;500;600;700;800',
+        'Poppins':             'Poppins:wght@300;400;500;600;700;800',
+        'Plus Jakarta Sans':   'Plus+Jakarta+Sans:wght@300;400;500;600;700;800',
+        'Outfit':              'Outfit:wght@300;400;500;600;700',
+        'Space Grotesk':       'Space+Grotesk:wght@300;400;500;600;700',
+        'DM Sans':             'DM+Sans:ital,opsz,wght@0,9..40,300..700',
+        'Raleway':             'Raleway:wght@300;400;500;600;700;800',
+        'Sarabun':             null,
+        'Kanit':               'Kanit:wght@300;400;500;600;700',
+      },
+    };
+
+    const _loadedFonts = new Set(['Sarabun', 'Manrope']); /* already in @import */
+
+    function loadGoogleFont(name, spec) {
+      if (_loadedFonts.has(name) || !spec) return;
+      _loadedFonts.add(name);
+      const url = `https://fonts.googleapis.com/css2?family=${spec}&display=swap`;
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = url;
+      document.head.appendChild(link);
+    }
+
+    function applyFont(bodyFont, headingFont) {
+      const root = document.documentElement.style;
+
+      if (bodyFont) {
+        loadGoogleFont(bodyFont, fontCatalog.body[bodyFont]);
+        root.setProperty('--font-body', `'${bodyFont}', sans-serif`);
+        const sel = document.getElementById('font-body-select');
+        if (sel) sel.value = bodyFont;
+      }
+
+      if (headingFont) {
+        loadGoogleFont(headingFont, fontCatalog.heading[headingFont]);
+        root.setProperty('--font-heading', `'${headingFont}', 'Sarabun', sans-serif`);
+        const sel = document.getElementById('font-heading-select');
+        if (sel) sel.value = headingFont;
+      }
+    }
+
+    /* Read current font values from CSS vars */
+    function getCurrentFonts() {
+      const style = getComputedStyle(document.documentElement);
+      const parseVar = (v) => {
+        const m = v.trim().match(/^'([^']+)'/);
+        return m ? m[1] : v.trim().split(',')[0].replace(/['"]/g, '').trim();
+      };
+      return {
+        body:    parseVar(style.getPropertyValue('--font-body') || 'Sarabun'),
+        heading: parseVar(style.getPropertyValue('--font-heading') || 'Manrope'),
+      };
+    }
+
+    /* ── Show app UI (top-bar + sidebar) after data loaded ── */
+    function showAppUI() {
+      document.getElementById('top-bar').classList.add('visible');
+      document.getElementById('canvas-wrap').style.display = 'block';
+      const panel = document.getElementById('ctrl-panel');
+      if (!panel.classList.contains('open')) {
+        panel.classList.add('open');
+        document.getElementById('canvas-viewport').classList.add('shifted');
+      }
+      const zoomControls = document.getElementById('zoom-controls');
+      if (zoomControls) zoomControls.classList.add('visible');
+      updateUndoRedoBtns();
+    }
+
+    /* ── Sidebar toggle ── */
+    function toggleSidebar() {
+      const panel = document.getElementById('ctrl-panel');
+      const isOpen = panel.classList.toggle('open');
+      document.getElementById('canvas-viewport').classList.toggle('shifted', isOpen);
+    }
+
+    /* legacy alias */
+    function togglePanel() { toggleSidebar(); }
 
     /* ── Controls ── */
     function initControls() {
@@ -1633,10 +2930,14 @@
       /* Width */
       const slider = document.getElementById('width-slider');
       const wVal = document.getElementById('w-val');
-      let curW = slider ? parseInt(slider.value) : 100;
+      let curW = slider ? parseInt(slider.value) : 195;
       function applyW(v) {
         curW = Math.max(40, v);
-        allDesc.forEach(el => { el.style.width = curW + 'px'; });
+        allDesc.forEach(el => {
+          el.style.width = curW + 'px';
+          el.style.marginLeft = (curW / -2) + 'px';
+          el.style.marginRight = (curW / -2) + 'px';
+        });
         slider.value = Math.max(60, Math.min(2000, curW));
         wVal.textContent = curW + 'px';
         scheduleSave();
@@ -1724,14 +3025,30 @@
         renderTimeline();
       };
 
+      /* Visual style picker */
+      const vstyleSelect = document.getElementById('vstyle-select');
+      if (vstyleSelect) {
+        vstyleSelect.onchange = (e) => { applyVisualStyle(e.target.value); scheduleSave(); };
+      }
+
+      /* Font pickers */
+      const fontBodySel = document.getElementById('font-body-select');
+      if (fontBodySel) {
+        fontBodySel.onchange = (e) => { applyFont(e.target.value, null); scheduleSave(); };
+      }
+      const fontHeadingSel = document.getElementById('font-heading-select');
+      if (fontHeadingSel) {
+        fontHeadingSel.onchange = (e) => { applyFont(null, e.target.value); scheduleSave(); };
+      }
+
       /* Theme picker */
       const themeSelect = document.getElementById('theme-select');
       if (themeSelect) {
         themeSelect.onchange = (e) => {
-          const currentSettings = gatherSettings(); // เก็บค่าการตั้งค่าต่างๆ ณ ปัจจุบันไว้ก่อน
+          const currentSettings = gatherSettings();
           palette = palettes[e.target.value] || palettes.default;
-          renderTimeline(); // วาดไทม์ไลน์ใหม่ด้วยสีชุดใหม่
-          restoreSettings(currentSettings); // โหลดขนาดอักษรและความกว้างเดิมกลับมาใช้กับตัวใหม่
+          renderTimeline();
+          restoreSettings(currentSettings);
           scheduleSave();
         };
       }
@@ -1749,6 +3066,26 @@
       wireColor([titleH1], 'h1-clr', '#1e2d4d');
       wireColor([titleSub], 'sub-clr', '#7a8899');
       wireColor(titleSub2 ? [titleSub2] : [], 'sub2-clr', '#9aaabb');
+
+      /* Canvas Background Color */
+      const canvasBgInp = document.getElementById('canvas-bg-clr');
+      const canvasWrap = document.getElementById('canvas-wrap');
+      if (canvasBgInp && canvasWrap) {
+        canvasBgInp.addEventListener('input', () => {
+          canvasWrap.style.backgroundColor = canvasBgInp.value;
+          scheduleSave();
+        });
+      }
+
+      /* ── Force <br> on Enter inside ev-desc (no nested <div>) ── */
+      allDesc.forEach(el => {
+        el.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            document.execCommand('insertLineBreak');
+          }
+        });
+      });
 
       /* ── Save on text edits ── */
       allDesc.forEach(el => el.addEventListener('input', scheduleSave));
@@ -1811,7 +3148,7 @@
 
       document.getElementById('upload-area').style.display = 'none';
       document.getElementById('page-title').style.display = 'block';
-      document.getElementById('ctrl-toggle').classList.add('visible');
+      showAppUI();
       renderTimeline();
       scheduleSave();
     }
@@ -1849,28 +3186,149 @@
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังสร้าง...';
       btn.disabled = true;
 
-      const panel = document.getElementById('ctrl-panel');
-      const toggle = document.getElementById('ctrl-toggle');
-      const wasOpen = panel.classList.contains('open');
+      const panel      = document.getElementById('ctrl-panel');
+      const topBar     = document.getElementById('top-bar');
+      const viewport   = document.getElementById('canvas-viewport');
+      const canvasWrap = document.getElementById('canvas-wrap');
+      const scaler     = document.getElementById('content-scaler');
+
+      /* ── Lock: suppress all auto-fit/resize callbacks during export ── */
+      _pdfExporting = true;
+      if (_fitRafId) { cancelAnimationFrame(_fitRafId); _fitRafId = null; }
+
+      /* ── Save state ── */
+      const wasOpen             = panel.classList.contains('open');
+      const wasSidebarOpen      = viewport.classList.contains('shifted');
+      const savedZoom           = zoomLevel;
+      const savedScrollL        = viewport.scrollLeft;
+      const savedScrollT        = viewport.scrollTop;
+      const savedScalerTransform = scaler?.style.transform || '';
+      const savedScalerWidth     = scaler?.style.width     || '';
+
+      /* ── Prepare: hide chrome, reset layout for clean measurement ── */
       panel.classList.remove('open');
-      toggle.classList.remove('open');
-      toggle.style.visibility = 'hidden';
-      await new Promise(r => setTimeout(r, 80));
+      viewport.classList.remove('shifted');
+      topBar.style.display = 'none';
+      viewport.scrollLeft = 0;
+      viewport.scrollTop  = 0;
+      await new Promise(r => setTimeout(r, 350)); /* sidebar transition */
+
+      if (zoomLevel !== 1.0) { applyZoom(1.0); await new Promise(r => setTimeout(r, 260)); } /* wait > 200ms CSS transition */
+
+      /*
+       * CRITICAL: Reset content-scaler to scale(1) before measurement.
+       * Range.getBoundingClientRect() in many browsers does NOT apply
+       * ancestor CSS transforms, while Element.getBoundingClientRect() does.
+       * This mismatch causes text to be drawn at wrong positions in the PDF.
+       * Solution: measure everything at natural (unscaled) positions, then
+       * apply scalerFactor manually in the coordinate conversion functions.
+       *
+       * _pdfExporting flag above ensures ResizeObserver cannot call
+       * fitContentToCanvas() and restore the scale during our 60ms wait.
+       */
+      const scalerMatch  = savedScalerTransform.match(/scale\(([\d.]+)\)/);
+      const scalerFactor = scalerMatch ? parseFloat(scalerMatch[1]) : 1;
+      /*
+       * Reset ONLY the transform — keep scaler.style.width intact.
+       * #page-title and #root use width:100% of content-scaler, so if we
+       * clear the width the scaler collapses to the canvas-wrap CSS width
+       * (e.g. 1122 px) instead of the natural content width (e.g. 3510 px
+       * for 18 events).  Clearing width shifts every element's "centre"
+       * toward the left, making the page title appear left-aligned and all
+       * column positions wrong.  Keeping the width preserves the same layout
+       * as the browser — only the CSS transform is removed so
+       * getBoundingClientRect() returns natural (unscaled) coordinates.
+       */
+      if (scaler) { scaler.style.transform = 'none'; /* width intentionally kept */ }
+
+      /* overflow:visible lets us measure elements that extend outside canvas bounds */
+      canvasWrap.style.overflow = 'visible';
+      /* Wait 2 animation frames so any queued ResizeObserver callbacks that
+         fired BEFORE _pdfExporting was set have fully completed, then our
+         60 ms settle ensures the DOM is stable for getBoundingClientRect(). */
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      if (scaler) { scaler.style.transform = 'none'; } /* re-assert transform only */
+      await new Promise(r => setTimeout(r, 60));
 
       try {
         const fonts = await fetchPDFFonts();
         const { jsPDF } = window.jspdf;
 
-        const sx = window.scrollX, sy = window.scrollY;
-        const abr = (el) => {
-          const r = el.getBoundingClientRect();
-          return { l: r.left + sx, t: r.top + sy, r: r.right + sx, b: r.bottom + sy, w: r.width, h: r.height };
-        };
-
         const tEl = document.getElementById('page-title');
         const rEl = document.getElementById('root');
 
-        /* ── Get browser-rendered text lines via Range API ── */
+        /* ── Canvas-wrap IS the paper. Use its rect as the coordinate origin. ── */
+        const wrapRect = canvasWrap.getBoundingClientRect();
+
+        /*
+         * Canvas CSS padding (56px top/bottom, 48px left/right).
+         * content-scaler starts at these offsets inside canvas-wrap.
+         */
+        const PAD_X = 48, PAD_Y = 56;
+        const scalerLeft = wrapRect.left + PAD_X;
+        const scalerTop  = wrapRect.top  + PAD_Y;
+
+        /* ── PDF page dimensions (mm) ── */
+        const size = getCanvasSize();
+
+        /*
+         * Natural (scale-1) content dimensions — stable because _pdfExporting
+         * suppresses ResizeObserver re-fits and we have already waited 60 ms.
+         */
+        const naturalW = scaler ? scaler.scrollWidth  : (wrapRect.width  - 2 * PAD_X);
+        const naturalH = scaler ? scaler.scrollHeight : (wrapRect.height - 2 * PAD_Y);
+
+        /*
+         * ── Effective scale factor for PDF coordinates ────────────────────
+         *
+         * When the selected paper size forces heavy downscaling (text < 6 pt),
+         * or when Auto size is chosen, we discard the paper constraint and
+         * export at the content's NATURAL size (scale = 1).  The PDF page
+         * then matches what the user sees on screen — like Safari "Export as
+         * PDF" — rather than being forced into a tiny A4 rendering.
+         *
+         * Minimum readable body text ≈ 6 pt.
+         * ev-desc natural font = 0.75 rem = 12 px → 9 pt.
+         * 9 pt × scalerFactor ≥ 6 pt  ⟺  scalerFactor ≥ 2/3 ≈ 0.667.
+         *
+         * When sf ≥ 0.667 the selected paper size is honoured as usual.
+         */
+        const USE_NATURAL_SIZE = (size.w === null || scalerFactor < 0.667);
+        const effectiveSF = USE_NATURAL_SIZE ? 1 : scalerFactor;
+
+        const pdfW = USE_NATURAL_SIZE
+          ? (naturalW + 2 * PAD_X) * PX2MM   /* content-based width */
+          : size.w;                            /* paper width in mm   */
+
+        const pdfH = (naturalH * effectiveSF + 2 * PAD_Y) * PX2MM;
+
+        const scW = PX2MM; /* 0.2646 mm/px — screen-dpi constant */
+        const scH = PX2MM;
+
+        /*
+         * Coordinate converters: natural viewport px → PDF mm.
+         *
+         * Since we reset the scaler, elements are at their NATURAL positions.
+         * We reconstruct the visual (scaled) position by applying scalerFactor,
+         * then add the canvas padding back, then convert to mm.
+         *
+         *   X(px): viewport_x
+         *          → (px - scalerLeft)        natural x within scaler
+         *          × effectiveSF              → visual x within scaler
+         *          + PAD_X                    → x within canvas-wrap
+         *          × scW                      → mm in PDF
+         */
+        const X = px => ((px - scalerLeft) * effectiveSF + PAD_X) * scW;
+        const Y = px => ((px - scalerTop)  * effectiveSF + PAD_Y) * scH;
+        const M = px => px * effectiveSF * scW; /* natural px size → PDF mm */
+
+        /* element bounding rect in viewport px (natural, scaler is reset) */
+        const abr = (el) => {
+          const r = el.getBoundingClientRect();
+          return { l: r.left, t: r.top, r: r.right, b: r.bottom, w: r.width, h: r.height };
+        };
+
+        /* ── Collect rendered text lines via Range API (natural positions) ── */
         function getRenderedLines(el) {
           const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
           const nodes = [];
@@ -1887,61 +3345,32 @@
               if (!rc.width && !rc.height) continue;
               if (curTop === null || rc.top > curTop + 3) {
                 if (cur && cur.text.trim()) lines.push(cur);
-                cur = {
-                  text: '', top: rc.top + sy, bottom: rc.bottom + sy,
-                  left: rc.left + sx, right: rc.right + sx
-                };
+                cur = { text: '', top: rc.top, bottom: rc.bottom, left: rc.left, right: rc.right };
                 curTop = rc.top;
               }
               cur.text += nd.textContent[i];
-              cur.left = Math.min(cur.left, rc.left + sx);
-              cur.right = Math.max(cur.right, rc.right + sx);
-              cur.bottom = Math.max(cur.bottom, rc.bottom + sy);
+              cur.left   = Math.min(cur.left,   rc.left);
+              cur.right  = Math.max(cur.right,  rc.right);
+              cur.bottom = Math.max(cur.bottom, rc.bottom);
             }
           }
           if (cur && cur.text.trim()) lines.push(cur);
-
           return lines;
         }
 
-        /* Pre-scan & cache rendered lines for every text element */
+        /* Pre-cache text lines for all text elements */
         const textCache = new Map();
-        const textEls = [
-          ...tEl.querySelectorAll('h1, p'),
-          ...rEl.querySelectorAll('.ev-date, .ev-desc')
-        ];
-        textEls.forEach(el => textCache.set(el, getRenderedLines(el)));
+        [...tEl.querySelectorAll('h1, p'), ...rEl.querySelectorAll('.ev-date, .ev-desc')]
+          .forEach(el => textCache.set(el, getRenderedLines(el)));
 
-        /* ── Content bounds: shapes + actual text positions ── */
-        let cL = 1e9, cT = 1e9, cR = -1e9, cB = -1e9;
+        /* ── Create jsPDF document ── */
+        const dimA = Math.max(pdfW, pdfH);
+        const dimB = Math.min(pdfW, pdfH);
+        const pdf  = new jsPDF({ unit: 'mm', format: [dimA, dimB], orientation: 'landscape' });
+        const pdfActualW = pdf.internal.pageSize.getWidth();
+        const pdfActualH = pdf.internal.pageSize.getHeight();
 
-        [...rEl.querySelectorAll('.ev-cell-top,.ev-cell-bot,.tl-bar-bg'),
-        ...tEl.querySelectorAll('h1,p')].forEach(e => {
-          const a = abr(e);
-          if (!a.w || !a.h) return;
-          cL = Math.min(cL, a.l); cT = Math.min(cT, a.t);
-          cR = Math.max(cR, a.r); cB = Math.max(cB, a.b);
-        });
-
-        /* Include actual rendered text overflow in bounds */
-        textCache.forEach(lines => {
-          lines.forEach(ln => {
-            cL = Math.min(cL, ln.left); cR = Math.max(cR, ln.right);
-            cT = Math.min(cT, ln.top); cB = Math.max(cB, ln.bottom);
-          });
-        });
-
-        const padPx = 40;
-        const padMM = padPx * PX2MM;
-        const pw = (cR - cL) * PX2MM + padMM * 2;
-        const ph = (cB - cT) * PX2MM + padMM * 2;
-        const X = d => (d - cL) * PX2MM + padMM;
-        const Y = d => (d - cT) * PX2MM + padMM;
-        const M = v => v * PX2MM;
-
-        const pdf = new jsPDF({ unit: 'mm', format: [pw, ph] });
-
-        /* Add fonts */
+        /* Embed fonts */
         pdf.addFileToVFS('Thai-R.ttf', ab2b64(fonts.reg));
         pdf.addFont('Thai-R.ttf', 'Thai', 'normal');
         pdf.addFileToVFS('Thai-B.ttf', ab2b64(fonts.bold));
@@ -1949,102 +3378,158 @@
         pdf.addFileToVFS('FA.ttf', ab2b64(fonts.fa));
         pdf.addFont('FA.ttf', 'FA', 'normal');
 
-        /* Background */
-        pdf.setFillColor(245, 247, 250);
-        pdf.rect(0, 0, pw, ph, 'F');
+        /* Page background */
+        pdf.setFillColor(...cssRGB(getComputedStyle(canvasWrap).backgroundColor));
+        pdf.rect(0, 0, pdfActualW, pdfActualH, 'F');
 
-        /* ── Draw text using cached browser-rendered lines ── */
+        /* ── Draw a text element (heading or description) ── */
         const drawEl = (el, weight) => {
-          const cs = getComputedStyle(el);
-          const fs = parseFloat(cs.fontSize);
-          const c = cssRGB(cs.color);
-          const a = abr(el);
+          const cs    = getComputedStyle(el);
+          /* px × effectiveSF = rendered px, × 0.75 = pt (96dpi→72pt) */
+          const fsPt  = parseFloat(cs.fontSize) * effectiveSF * 0.75;
+          const color = cssRGB(cs.color);
+          const a     = abr(el);
           const lines = textCache.get(el);
           if (!lines || !lines.length) return;
-
           pdf.setFont('Thai', weight);
-          pdf.setFontSize(fs * 0.75);
-          pdf.setTextColor(...c);
-
+          pdf.setFontSize(fsPt);
+          pdf.setTextColor(...color);
           for (const ln of lines) {
             const txt = ln.text.trim();
             if (!txt) continue;
-            /* baseline ≈ 76% from top of line box */
-            const baseline = ln.top + (ln.bottom - ln.top) * 0.76;
-            const cx = a.l + a.w / 2;
-            pdf.text(txt, X(cx), Y(baseline), { align: 'center' });
+            const baselineY = ln.top + (ln.bottom - ln.top) * 0.76;
+            /*
+             * Use the line's actual rendered midpoint (from Range API)
+             * instead of the element's bounding-rect centre.
+             * Elements with negative CSS margins (e.g. .ev-desc) can have
+             * a.l < scalerLeft, which makes (a.l + a.w/2) resolve to a
+             * negative PDF x-coordinate (off the left edge of the page).
+             * The Range bounding rect is unaffected by margin tricks and
+             * correctly reflects where the glyphs were actually painted.
+             */
+            const centerX = (ln.left + ln.right) / 2;
+            pdf.text(txt, X(centerX), Y(baselineY), { align: 'center' });
           }
         };
 
         /* Titles */
-        drawEl(tEl.querySelector('h1'), 'bold');
-        drawEl(tEl.querySelector('p'), 'normal');
-        const s2 = tEl.querySelector('p.sub2');
-        if (s2 && s2.textContent.trim()) drawEl(s2, 'normal');
+        tEl.querySelectorAll('h1').forEach(el => drawEl(el, 'bold'));
+        tEl.querySelectorAll('p').forEach(el => { if (el.textContent.trim()) drawEl(el, 'normal'); });
 
-        /* Color bar segments */
+        /* Coloured bar segments */
         rEl.querySelectorAll('.tl-bar-seg').forEach(el => {
           const a = abr(el);
+          if (!a.w || !a.h) return;
           pdf.setFillColor(...cssRGB(getComputedStyle(el).backgroundColor));
-          pdf.rect(X(a.l), Y(a.t), M(a.w), M(a.h), 'F');
+          pdf.rect(X(a.l), Y(a.t), Math.max(M(a.w), 0.3), Math.max(M(a.h), 0.3), 'F');
         });
 
         /* Dots on bar */
         rEl.querySelectorAll('.ev-dot').forEach(el => {
           const a = abr(el);
-          const bc = cssRGB(getComputedStyle(el).borderColor);
+          const r = M(a.w / 2);
+          if (r < 0.1) return;
           pdf.setFillColor(255, 255, 255);
-          pdf.setDrawColor(...bc);
+          pdf.setDrawColor(...cssRGB(getComputedStyle(el).borderColor));
           pdf.setLineWidth(M(2.5));
-          pdf.circle(X(a.l + a.w / 2), Y(a.t + a.h / 2), M(a.w / 2), 'FD');
+          pdf.circle(X(a.l + a.w / 2), Y(a.t + a.h / 2), r, 'FD');
         });
 
         /* Stems */
         rEl.querySelectorAll('.ev-stem').forEach(el => {
           const a = abr(el);
+          if (!a.h) return;
           pdf.setFillColor(...cssRGB(getComputedStyle(el).backgroundColor));
-          pdf.rect(X(a.l), Y(a.t), Math.max(M(a.w), 0.5), M(a.h), 'F');
+          pdf.rect(X(a.l), Y(a.t), Math.max(M(a.w), 0.4), M(a.h), 'F');
         });
 
-        /* Circles + icons */
+        /* Circles + FontAwesome icons */
         rEl.querySelectorAll('.ev-circle').forEach(el => {
-          const a = abr(el);
-          const c = cssRGB(getComputedStyle(el).backgroundColor);
-          const cx = X(a.l + a.w / 2), cy = Y(a.t + a.h / 2), r = M(a.w / 2);
-          pdf.setFillColor(...c);
+          const a  = abr(el);
+          const cx = X(a.l + a.w / 2);
+          const cy = Y(a.t + a.h / 2);
+          const r  = M(a.w / 2);
+          if (r < 0.1) return;
+          pdf.setFillColor(...cssRGB(getComputedStyle(el).backgroundColor));
           pdf.circle(cx, cy, r, 'F');
-
           const ico = el.querySelector('i');
           if (ico) {
             const content = getComputedStyle(ico, '::before').content;
             if (content && content !== 'none' && content !== 'normal') {
-              const ch = content.replace(/['"]/g, '');
+              /* Use the icon's actual computed font size for accuracy */
+              const icoFsPt = parseFloat(getComputedStyle(ico).fontSize) * effectiveSF * 0.75;
               pdf.setFont('FA', 'normal');
-              pdf.setFontSize(a.w * 0.34);
+              pdf.setFontSize(icoFsPt);
               pdf.setTextColor(255, 255, 255);
-              pdf.text(ch, cx, cy + M(a.w) * 0.12, { align: 'center' });
+              pdf.text(content.replace(/['"]/g, ''), cx, cy + r * 0.35, { align: 'center' });
             }
           }
         });
 
-        /* Date text */
+        /* Dates */
         rEl.querySelectorAll('.ev-date').forEach(el => drawEl(el, 'bold'));
 
-        /* Description text */
-        rEl.querySelectorAll('.ev-desc').forEach(el => drawEl(el, 'normal'));
+        /*
+         * Descriptions — clip each element to its own bounding rect in the PDF.
+         *
+         * .ev-desc uses overflow:hidden in CSS, but Range.getBoundingClientRect()
+         * does NOT respect overflow:hidden — it reports character positions even
+         * for text that the browser visually clips (e.g. .nowrap spans that extend
+         * past the 195 px element boundary).  Without a PDF clip, those hidden
+         * characters would appear in the exported PDF at positions outside the box.
+         *
+         * We replicate overflow:hidden by:
+         *   1. pdf.saveGraphicsState()  — write `q` to PDF stream
+         *   2. Write a rectangle clip path (`re W n`) for the element rect
+         *   3. Draw text (only glyphs inside the clip rect are painted)
+         *   4. pdf.restoreGraphicsState() — write `Q`, removes clip
+         *
+         * PDF coordinate system: origin bottom-left, y increases upward.
+         * pdfActualH (mm) − cy (mm from top) − ch (mm height) = bottom-left y.
+         * Multiply by MM2PT to get PDF stream units (points).
+         */
+        const MM2PT = 72 / 25.4;   /* mm → PDF internal points */
+        rEl.querySelectorAll('.ev-desc').forEach(el => {
+          const a  = abr(el);
+          const cx = X(a.l);
+          const cy = Y(a.t);
+          const cw = Math.max(M(a.w), 0.5);
+          const ch = Math.max(M(a.h), 0.5);
+          /* convert to PDF points, flip y-axis */
+          const xp = (cx            * MM2PT).toFixed(3);
+          const yp = ((pdfActualH - cy - ch) * MM2PT).toFixed(3);
+          const wp = (cw            * MM2PT).toFixed(3);
+          const hp = (ch            * MM2PT).toFixed(3);
+          pdf.saveGraphicsState();
+          pdf.internal.write(`${xp} ${yp} ${wp} ${hp} re W n`);
+          drawEl(el, 'normal');
+          pdf.restoreGraphicsState();
+        });
 
         /* Save */
-        const title = tEl.querySelector('h1')?.textContent || 'timeline';
-        pdf.save(title.replace(/[/\\?%*:|"<>]/g, '') + '.pdf');
+        const titleText = tEl.querySelector('h1')?.textContent || 'timeline';
+        pdf.save(titleText.replace(/[/\\?%*:|"<>]/g, '') + '.pdf');
 
       } catch (err) {
         console.error('PDF export failed:', err);
         alert('สร้าง PDF ไม่สำเร็จ: ' + err.message);
       } finally {
+        /* ── Restore everything ── */
+        _pdfExporting = false; /* unlock auto-fit before touching DOM */
+        canvasWrap.style.overflow = '';
+        if (scaler) {
+          scaler.style.transform = savedScalerTransform;
+          scaler.style.width     = savedScalerWidth;
+        }
+        viewport.scrollLeft = savedScrollL;
+        viewport.scrollTop  = savedScrollT;
         btn.innerHTML = origHTML;
-        btn.disabled = false;
-        toggle.style.visibility = '';
-        if (wasOpen) { panel.classList.add('open'); toggle.classList.add('open'); }
+        btn.disabled  = false;
+        topBar.style.display = '';
+        if (wasOpen)        panel.classList.add('open');
+        if (wasSidebarOpen) viewport.classList.add('shifted');
+        if (savedZoom !== 1.0) setTimeout(() => applyZoom(savedZoom), 60);
+        setTimeout(fitContentToCanvas, 80);
       }
     }
 
@@ -2059,8 +3544,8 @@
         const descEl = document.querySelector(`[data-id="desc-${Math.floor(idx / COLS)}-${idx % COLS}"]`);
         const dateEl = document.querySelector(`[data-id="date-${Math.floor(idx / COLS)}-${idx % COLS}"]`);
         return {
-          date: dateEl ? dateEl.textContent : ev.date,
-          desc: descEl ? descEl.textContent : ev.desc,
+          date: dateEl ? getEditableText(dateEl) : ev.date,
+          desc: descEl ? getEditableText(descEl) : ev.desc,
           icon: ev.icon,
         };
       });
@@ -2107,7 +3592,7 @@
 
           document.getElementById('upload-area').style.display = 'none';
           document.getElementById('page-title').style.display = 'block';
-          document.getElementById('ctrl-toggle').classList.add('visible');
+          showAppUI();
 
           if (project.settings && project.settings.theme && palettes[project.settings.theme]) {
             palette = palettes[project.settings.theme];
@@ -2122,6 +3607,369 @@
       };
       reader.readAsText(file);
       e.target.value = ''; /* reset so same file can be loaded again */
+    });
+
+    /* ═══════════════════════════════════════════════════
+       Drag & Drop state
+       ═══════════════════════════════════════════════════ */
+    let dragSrcIdx = null;
+
+    /* ═══════════════════════════════════════════════════
+       Undo / Redo
+       ═══════════════════════════════════════════════════ */
+    let undoStack = [];
+    let redoStack = [];
+
+    function snapshotState() {
+      const titleH1 = document.querySelector('#page-title h1');
+      const titleSub = document.querySelector('#page-title p');
+      const titleSub2 = document.querySelector('#page-title p.sub2');
+      const eventsSnapshot = allEvents.map((ev, idx) => {
+        const descEl = document.querySelector(`[data-id="desc-${Math.floor(idx / COLS)}-${idx % COLS}"]`);
+        const dateEl = document.querySelector(`[data-id="date-${Math.floor(idx / COLS)}-${idx % COLS}"]`);
+        return {
+          date: dateEl ? getEditableText(dateEl) : ev.date,
+          desc: descEl ? getEditableText(descEl) : ev.desc,
+          icon: ev.icon,
+        };
+      });
+      return {
+        events: JSON.parse(JSON.stringify(eventsSnapshot)),
+        cols: COLS,
+        title: titleH1 ? titleH1.textContent : '',
+        subtitle: titleSub ? titleSub.textContent : '',
+        subtitle2: titleSub2 ? titleSub2.textContent : '',
+        settings: gatherSettings(),
+      };
+    }
+
+    function pushUndo() {
+      undoStack.push(snapshotState());
+      if (undoStack.length > 50) undoStack.shift();
+      redoStack = [];
+      updateUndoRedoBtns();
+    }
+
+    function applySnapshot(snap) {
+      allEvents = JSON.parse(JSON.stringify(snap.events));
+      COLS = snap.cols;
+      document.querySelector('#page-title h1').textContent = snap.title || 'Timeline';
+      document.querySelector('#page-title p').textContent = snap.subtitle || '';
+      document.querySelector('#page-title p.sub2').textContent = snap.subtitle2 || '';
+      if (snap.settings && snap.settings.theme && palettes[snap.settings.theme]) {
+        palette = palettes[snap.settings.theme];
+      }
+      renderTimeline();
+      if (snap.settings) restoreSettings(snap.settings);
+      scheduleSave();
+    }
+
+    function undo() {
+      if (!undoStack.length) return;
+      redoStack.push(snapshotState());
+      const snap = undoStack.pop();
+      applySnapshot(snap);
+      updateUndoRedoBtns();
+    }
+
+    function redo() {
+      if (!redoStack.length) return;
+      undoStack.push(snapshotState());
+      const snap = redoStack.pop();
+      applySnapshot(snap);
+      updateUndoRedoBtns();
+    }
+
+    function updateUndoRedoBtns() {
+      const u = document.getElementById('btn-undo');
+      const r = document.getElementById('btn-redo');
+      if (u) u.disabled = undoStack.length === 0;
+      if (r) r.disabled = redoStack.length === 0;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       Canvas / PDF size config
+       ═══════════════════════════════════════════════════ */
+    const canvasSizes = {
+      auto: { label: 'Auto', w: null, h: null },
+      a4l: { label: 'A4 Landscape', w: 297, h: 210 },
+      a4p: { label: 'A4 Portrait', w: 210, h: 297 },
+      a3l: { label: 'A3 Landscape', w: 420, h: 297 },
+      a3p: { label: 'A3 Portrait', w: 297, h: 420 },
+      a5l: { label: 'A5 Landscape', w: 210, h: 148 },
+      letterl: { label: 'Letter Landscape', w: 279, h: 216 },
+    };
+
+    function getCanvasSize() {
+      const sel = document.getElementById('canvas-size-select');
+      return canvasSizes[sel ? sel.value : 'a4l'] || canvasSizes.a4l;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       Zoom  (Ctrl/Cmd + Scroll  or  Trackpad Pinch)
+       ═══════════════════════════════════════════════════ */
+    let zoomLevel = 1.0;
+    const ZOOM_MIN = 0.5;   /* 50% */
+    const ZOOM_MAX = 1.75;  /* 175% */
+    const ZOOM_STEP = 0.02; /* 2% ต่อ scroll tick */
+    const ZOOM_BTN_STEP = 0.1; /* 10% ต่อครั้งที่กดปุ่ม */
+    /* snap points ที่จะดูดค่าเข้าหาเมื่อใกล้ */
+    const ZOOM_SNAPS = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75];
+    const ZOOM_SNAP_TOL = 0.015;
+    let _zoomHudTimer = null;
+
+    function applyZoom(newZ, snap = false) {
+      let z = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, newZ));
+      /* snap to nearest anchor when close enough */
+      if (snap) {
+        for (const s of ZOOM_SNAPS) {
+          if (Math.abs(z - s) <= ZOOM_SNAP_TOL) { z = s; break; }
+        }
+      }
+      zoomLevel = parseFloat(z.toFixed(3));
+      const wrap = document.getElementById('canvas-wrap');
+      if (wrap) wrap.style.transform = `scale(${zoomLevel})`;
+      const hud = document.getElementById('zoom-hud');
+      const val = document.getElementById('zoom-val');
+      if (hud && val) {
+        val.textContent = Math.round(zoomLevel * 100) + '%';
+        hud.classList.add('visible');
+        clearTimeout(_zoomHudTimer);
+        _zoomHudTimer = setTimeout(() => hud.classList.remove('visible'), 1400);
+      }
+    }
+
+    document.addEventListener('wheel', (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        /* normalize across devices: clamp deltaY, scale by 0.001 */
+        const raw = Math.max(-20, Math.min(20, e.deltaY));
+        const delta = -raw * ZOOM_STEP * 0.5;
+        applyZoom(zoomLevel + delta, true);
+      }
+    }, { passive: false });
+
+    /* ═══════════════════════════════════════════════════
+       Add Event Modal
+       ═══════════════════════════════════════════════════ */
+    function openAddEventModal() {
+      document.getElementById('modal-date').value = '';
+      document.getElementById('modal-desc').value = '';
+      document.getElementById('add-event-modal').classList.add('open');
+      setTimeout(() => document.getElementById('modal-date').focus(), 80);
+    }
+
+    function closeAddEventModal() {
+      document.getElementById('add-event-modal').classList.remove('open');
+    }
+
+    function confirmAddEvent() {
+      const date = document.getElementById('modal-date').value.trim();
+      const desc = document.getElementById('modal-desc').value.trim();
+      if (!date && !desc) { document.getElementById('modal-date').focus(); return; }
+      pushUndo();
+      const s = gatherSettings();
+      allEvents.push({ date: date || '–', desc: desc || '–', icon: autoIcon(desc) });
+      /* If all events now fill an extra row, bump COLS so it stays readable */
+      if (allEvents.length > 1 && COLS < allEvents.length && allEvents.length % COLS === 1) {
+        COLS = Math.max(3, Math.round(allEvents.length / 2));
+      }
+      closeAddEventModal();
+      renderTimeline();
+      restoreSettings(s);
+      scheduleSave();
+      /* Scroll to bottom so user sees the new event */
+      setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 80);
+    }
+
+    /* Backdrop click / Escape / Ctrl+Enter / Ctrl+Z / Ctrl+Y */
+    document.getElementById('add-event-modal').addEventListener('click', function (e) {
+      if (e.target === this) closeAddEventModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      const modalOpen = document.getElementById('add-event-modal').classList.contains('open');
+      const pickerOpen = document.getElementById('icon-picker').classList.contains('open');
+      if (e.key === 'Escape' && modalOpen) { closeAddEventModal(); return; }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && modalOpen) { confirmAddEvent(); return; }
+      if (!modalOpen && !pickerOpen) {
+        if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'z') { e.preventDefault(); undo(); return; }
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) { e.preventDefault(); redo(); return; }
+      }
+    });
+
+    /* ═══════════════════════════════════════════════════
+       Delete Event
+       ═══════════════════════════════════════════════════ */
+    function deleteEvent(idx) {
+      const label = (allEvents[idx]?.desc || '').substring(0, 40) || 'Event นี้';
+      if (!confirm(`ลบ "${label}" ใช่หรือไม่?`)) return;
+      pushUndo();
+      const s = gatherSettings();
+      allEvents.splice(idx, 1);
+      if (allEvents.length === 0) {
+        document.getElementById('upload-area').style.display = '';
+        document.getElementById('page-title').style.display = 'none';
+        document.getElementById('canvas-wrap').style.display = 'none';
+        document.getElementById('top-bar').classList.remove('visible');
+        document.getElementById('ctrl-panel').classList.remove('open');
+        const zoomControls = document.getElementById('zoom-controls');
+        if (zoomControls) zoomControls.classList.remove('visible');
+        document.getElementById('canvas-viewport').classList.remove('shifted');
+        document.getElementById('root').innerHTML = '';
+        return;
+      }
+      COLS = Math.min(COLS, allEvents.length);
+      renderTimeline();
+      restoreSettings(s);
+      scheduleSave();
+    }
+
+    /* ═══════════════════════════════════════════════════
+       Fullscreen
+       ═══════════════════════════════════════════════════ */
+    function toggleFullscreen() {
+      const target = document.getElementById('canvas-viewport') || document.documentElement;
+      if (!document.fullscreenElement) {
+        target.requestFullscreen().catch(err => {
+          alert(`ไม่สามารถเข้าโหมดเต็มจอได้: ${err.message}`);
+        });
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    }
+    document.getElementById('btn-fullscreen')?.addEventListener('click', toggleFullscreen);
+    document.addEventListener('fullscreenchange', () => {
+      const btn = document.getElementById('btn-fullscreen');
+      if (!btn) return;
+      const icon = btn.querySelector('i');
+      if (document.fullscreenElement) {
+        icon.className = 'fa-solid fa-compress';
+        btn.title = 'ออกจากโหมดเต็มจอ';
+      } else {
+        icon.className = 'fa-solid fa-expand';
+        btn.title = 'แสดงเต็มจอ';
+      }
+    });
+
+    /* ═══════════════════════════════════════════════════
+       Zoom Buttons
+       ═══════════════════════════════════════════════════ */
+    document.getElementById('zoom-in-btn')?.addEventListener('click', () => applyZoom(zoomLevel + ZOOM_BTN_STEP, true));
+    document.getElementById('zoom-out-btn')?.addEventListener('click', () => applyZoom(zoomLevel - ZOOM_BTN_STEP, true));
+
+    /* ═══════════════════════════════════════════════════
+       Canvas Size & Aspect Ratio Preview
+       ═══════════════════════════════════════════════════ */
+    /* ── How many px per mm at screen resolution ── */
+    const PX_PER_MM = 3.779527; /* 96 dpi */
+
+    /* ── Set canvas paper dimensions then fit content ── */
+    function applyCanvasPaperSize() {
+      const wrap = document.getElementById('canvas-wrap');
+      const scaler = document.getElementById('content-scaler');
+      const sel = document.getElementById('canvas-size-select');
+      if (!wrap || !sel || !scaler) return;
+
+      const size = getCanvasSize();
+
+      if (size.w === null) {
+        /* Auto: canvas hugs content, no fixed size, no scaling */
+        wrap.style.width = '';
+        wrap.style.height = '';
+        wrap.style.minWidth = '';
+        wrap.style.minHeight = '';
+        scaler.style.transform = '';
+        scaler.style.width = '';
+        return;
+      }
+
+      const paperW = size.w * PX_PER_MM;
+      const paperH = size.h * PX_PER_MM;
+
+      wrap.style.width = Math.round(paperW) + 'px';
+      wrap.style.height = Math.round(paperH) + 'px';
+      wrap.style.minWidth = 'unset';
+      wrap.style.minHeight = 'unset';
+
+      /* After setting paper size, scale content to fit */
+      fitContentToCanvas();
+    }
+
+    /* ── Scale #content-scaler so everything fits inside canvas bounds ── */
+    let _fitRafId = null;
+    let _pdfExporting = false; /* flag: suppress auto-fit while PDF is rendering */
+    function fitContentToCanvas() {
+      if (_pdfExporting) return; /* don't touch scaler mid-export */
+      if (_fitRafId) cancelAnimationFrame(_fitRafId);
+      _fitRafId = requestAnimationFrame(_doFit);
+    }
+
+    function _doFit() {
+      _fitRafId = null;
+      const wrap = document.getElementById('canvas-wrap');
+      const scaler = document.getElementById('content-scaler');
+      if (!wrap || !scaler) return;
+
+      const size = getCanvasSize();
+      if (size.w === null) {
+        /* Auto mode: reset any previous scale */
+        scaler.style.transform = '';
+        scaler.style.width = '';
+        return;
+      }
+
+      /* ① Reset scale so we measure natural (unscaled) content size */
+      scaler.style.transform = 'none';
+      scaler.style.width = 'max-content';
+      void scaler.offsetWidth; /* force reflow */
+
+      const naturalW = scaler.scrollWidth;
+      const naturalH = scaler.scrollHeight;
+
+      /* ② Available inner area = paper minus padding (56px × 48px) */
+      const PAD_X = 96;  /* 48 × 2 */
+      const PAD_Y = 112; /* 56 × 2 */
+      const availW = wrap.clientWidth  - PAD_X;
+      const availH = wrap.clientHeight - PAD_Y;
+
+      if (naturalW <= 0 || naturalH <= 0 || availW <= 0 || availH <= 0) return;
+
+      /* ③ Compute uniform fit scale (never upscale beyond 1) */
+      const s = Math.min(availW / naturalW, availH / naturalH, 1);
+
+      if (Math.abs(s - 1) < 0.002) {
+        /* Content already fits — clear any leftover transform */
+        scaler.style.transform = '';
+        scaler.style.width = '';
+      } else {
+        /* ④ Apply scale; fix scaler width to its natural size so that
+              the scaled visual footprint = naturalW*s × naturalH*s
+              and the canvas overflow:hidden clips any rounding residue */
+        scaler.style.width = naturalW + 'px';
+        scaler.style.transform = `scale(${s.toFixed(5)})`;
+      }
+    }
+
+    /* Watch #root and #page-title — when content changes size, re-fit */
+    const paperObserver = new ResizeObserver((entries) => {
+      /* Ignore resize events caused by our own transform (transform doesn't
+         affect offsetWidth, but scrollWidth can be affected in some browsers) */
+      for (const e of entries) {
+        if (e.target.closest('#content-scaler')?.style.transform !== '') {
+          /* scaler is already scaled — only re-fit, skip full paper recalc */
+          fitContentToCanvas();
+          return;
+        }
+      }
+      requestAnimationFrame(() => applyCanvasPaperSize());
+    });
+
+    paperObserver.observe(document.getElementById('root'));
+    paperObserver.observe(document.getElementById('page-title'));
+
+    document.getElementById('canvas-size-select')?.addEventListener('change', () => {
+      applyCanvasPaperSize();
+      scheduleSave();
     });
 
     /* ── Auto-restore on page load ── */
