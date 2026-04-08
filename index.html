@@ -44,6 +44,18 @@
       padding: 0;
     }
 
+    /* ── Disable text selection everywhere except active text editing ── */
+    *, *::before, *::after { user-select: none !important; }
+    [contenteditable]:focus,
+    [contenteditable]:focus * { user-select: text !important; }
+    input, textarea, select { user-select: text !important; }
+
+    /* ── Spacebar-pan cursor ── */
+    body.space-pan { cursor: grab !important; }
+    body.space-pan * { cursor: grab !important; }
+    body.space-pan.panning,
+    body.space-pan.panning * { cursor: grabbing !important; }
+
     body {
       font-family: var(--font-body);
       background: #dce1e8;
@@ -446,6 +458,19 @@
       flex-shrink: 0;
     }
 
+    .ev-time {
+      font-family: var(--font-heading);
+      font-size: 0.72rem;
+      font-weight: 500;
+      text-align: center;
+      line-height: 1.2;
+      opacity: 0.7;
+      flex-shrink: 0;
+      letter-spacing: 0.02em;
+    }
+
+    .ev-time:empty { display: none; }
+
     .ev-desc {
       font-size: 0.75rem;
       color: var(--on-surface-var);
@@ -474,6 +499,90 @@
       outline: none;
       background: var(--surface-white);
       box-shadow: 0 2px 14px rgba(25, 28, 30, 0.08);
+    }
+
+    /* ── Event image ── */
+    .ev-imgs-outer {
+      display: flex;
+      flex-direction: row;
+      gap: 4px;
+      flex-wrap: wrap;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .ev-img-wrap {
+      position: relative;
+      display: block;
+      flex-shrink: 0;
+      line-height: 0;
+    }
+
+    .ev-img {
+      display: block;
+      max-width: var(--ev-img-w, 180px);
+      max-height: calc(var(--ev-img-w, 180px) * 0.85);
+      width: auto;
+      height: auto;
+      border-radius: 6px;
+      object-fit: cover;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.14);
+      cursor: pointer;
+    }
+
+    .ev-img-del {
+      position: absolute;
+      top: 3px;
+      right: 3px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(0,0,0,0.58);
+      color: #fff;
+      font-size: 14px;
+      line-height: 20px;
+      text-align: center;
+      cursor: pointer;
+      padding: 0;
+      opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 10;
+    }
+
+    .ev-img-wrap:hover .ev-img-del { opacity: 1; }
+
+    /* Subtle camera hint when no image */
+    .ev-img-hint {
+      opacity: 0;
+      transition: opacity 0.2s;
+      font-size: 0.58rem;
+      color: var(--on-surface-var);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      cursor: pointer;
+      padding: 5px 10px;
+      border-radius: 6px;
+      border: 1.5px dashed transparent;
+      flex-shrink: 0;
+      pointer-events: none;
+    }
+
+    .ev-cell-top:hover .ev-img-hint,
+    .ev-cell-bot:hover .ev-img-hint {
+      opacity: 0.32;
+      border-color: currentColor;
+      pointer-events: auto;
+    }
+
+    /* Drop target highlight when dragging image file over cell */
+    .ev-cell-top.img-drop-over,
+    .ev-cell-bot.img-drop-over {
+      outline: 2px dashed var(--primary, #4a7fcb);
+      outline-offset: 4px;
+      border-radius: 6px;
     }
 
     .ev-desc .nowrap {
@@ -600,6 +709,63 @@
 
     .tb-spacer {
       flex: 1;
+    }
+
+    /* ── Spacing control (ความกว้างช่องเส้นเวลา) ── */
+    .tb-spacing-ctrl {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+    .tb-spacing-display {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 30px;
+    }
+    .tb-spacing-label {
+      font-size: 0.58rem;
+      opacity: 0.65;
+      font-weight: 500;
+    }
+    .tb-spacing-icon {
+      font-size: 0.75rem;
+      line-height: 1;
+    }
+
+    /* ── Rows control (จำนวนแถวเส้นเวลา) ── */
+    .tb-rows-ctrl {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+
+    .tb-rows-display {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 30px;
+      line-height: 1.1;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .tb-rows-num {
+      font-family: var(--font-heading);
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--on-surface);
+    }
+
+    .tb-rows-label {
+      font-size: 0.58rem;
+      font-weight: 500;
+      color: var(--on-surface-var);
+      opacity: 0.65;
+      letter-spacing: 0.03em;
     }
 
     /* Canvas size select in top bar */
@@ -895,9 +1061,9 @@
 
     /* ── Canvas wrap (zoom target / paper sheet) ── */
     #canvas-wrap {
+      position: relative;          /* anchor for resize handles */
       transform-origin: top center;
-      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s;
-      will-change: transform;
+      transition: background-color 0.2s;
       background-color: #ffffff;
       box-shadow: 0 8px 40px rgba(25, 28, 30, 0.14), 0 2px 8px rgba(25, 28, 30, 0.08);
       border-radius: 12px;
@@ -906,6 +1072,68 @@
       min-width: 800px;
       min-height: 400px;
       overflow: hidden; /* content must never spill outside paper */
+    }
+
+    /* ── Canvas resize handles ── */
+    .canvas-rh {
+      position: absolute;
+      z-index: 30;
+      opacity: 0;
+      transition: opacity 0.18s;
+      pointer-events: auto;
+    }
+    #canvas-wrap:hover .canvas-rh { opacity: 1; }
+    #canvas-wrap.canvas-resizing .canvas-rh { opacity: 1; }
+
+    /* Right edge */
+    .canvas-rh-e {
+      right: 0; top: 20px; bottom: 20px;
+      width: 16px;
+      cursor: ew-resize;
+    }
+    .canvas-rh-e::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 4px; height: 36px;
+      border-radius: 2px;
+      background: var(--primary, #4a7fcb);
+      opacity: 0.55;
+    }
+
+    /* Bottom edge */
+    .canvas-rh-s {
+      bottom: 0; left: 20px; right: 20px;
+      height: 16px;
+      cursor: ns-resize;
+    }
+    .canvas-rh-s::after {
+      content: '';
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      height: 4px; width: 36px;
+      border-radius: 2px;
+      background: var(--primary, #4a7fcb);
+      opacity: 0.55;
+    }
+
+    /* Bottom-right corner */
+    .canvas-rh-se {
+      right: 0; bottom: 0;
+      width: 22px; height: 22px;
+      cursor: nwse-resize;
+    }
+    .canvas-rh-se::after {
+      content: '';
+      position: absolute;
+      right: 4px; bottom: 4px;
+      width: 9px; height: 9px;
+      border-right: 3px solid var(--primary, #4a7fcb);
+      border-bottom: 3px solid var(--primary, #4a7fcb);
+      border-radius: 0 0 2px 0;
+      opacity: 0.65;
     }
 
     /* ── Content scaler: fit-to-canvas transform target ── */
@@ -1588,7 +1816,14 @@
       #icon-picker-backdrop,
       #top-bar,
       #btn-add-event,
-      #zoom-hud {
+      #zoom-hud,
+      .canvas-rh,
+      #spacing-ctrl,
+      #spacing-sep,
+      #barh-ctrl,
+      #barh-sep,
+      .ev-img-hint,
+      .ev-img-del {
         display: none !important;
       }
 
@@ -1654,6 +1889,33 @@
     <button class="tb-btn" onclick="openAddEventModal()" title="เพิ่ม Event ใหม่">
       <i class="fa-solid fa-plus"></i> เพิ่ม Event
     </button>
+    <div class="tb-sep" id="rows-sep" style="display:none;"></div>
+    <div class="tb-rows-ctrl" id="rows-ctrl" style="display:none;" title="จำนวนแถวเส้นเวลา">
+      <button class="tb-btn tb-icon-only" id="rows-dn" title="ลดแถว">−</button>
+      <div class="tb-rows-display">
+        <span class="tb-rows-num" id="rows-val">1</span>
+        <span class="tb-rows-label">แถว</span>
+      </div>
+      <button class="tb-btn tb-icon-only" id="rows-up" title="เพิ่มแถว">+</button>
+    </div>
+    <div class="tb-sep" id="spacing-sep" style="display:none;"></div>
+    <div class="tb-spacing-ctrl" id="spacing-ctrl" style="display:none;" title="ความกว้างช่องระหว่าง Event">
+      <button class="tb-btn tb-icon-only" id="spacing-dn" title="ย่อเส้นเวลา">◀</button>
+      <div class="tb-spacing-display">
+        <i class="fa-solid fa-arrows-left-right tb-spacing-icon"></i>
+        <span class="tb-spacing-label">เส้น</span>
+      </div>
+      <button class="tb-btn tb-icon-only" id="spacing-up" title="ยืดเส้นเวลา">▶</button>
+    </div>
+    <div class="tb-sep" id="barh-sep" style="display:none;"></div>
+    <div class="tb-spacing-ctrl" id="barh-ctrl" style="display:none;" title="ความหนาของเส้น Timeline">
+      <button class="tb-btn tb-icon-only" id="barh-dn" title="บางลง">−</button>
+      <div class="tb-spacing-display">
+        <i class="fa-solid fa-grip-lines tb-spacing-icon"></i>
+        <span class="tb-spacing-label">หนา</span>
+      </div>
+      <button class="tb-btn tb-icon-only" id="barh-up" title="หนาขึ้น">+</button>
+    </div>
     <button class="tb-btn tb-icon-only" id="btn-fullscreen" title="แสดงเต็มจอ">
       <i class="fa-solid fa-expand"></i>
     </button>
@@ -1717,6 +1979,12 @@
           <div id="root"></div>
 
         </div><!-- /content-scaler -->
+
+        <!-- Free-resize drag handles (right / bottom / corner) -->
+        <div class="canvas-rh canvas-rh-e"  id="crh-e"  title="ลากเพื่อปรับความกว้าง"></div>
+        <div class="canvas-rh canvas-rh-s"  id="crh-s"  title="ลากเพื่อปรับความสูง"></div>
+        <div class="canvas-rh canvas-rh-se" id="crh-se" title="ลากเพื่อปรับขนาด"></div>
+
       </div><!-- /canvas-wrap -->
 
     </div><!-- /canvas-stage -->
@@ -1749,6 +2017,10 @@
       <div class="modal-field">
         <label>วันที่</label>
         <input type="text" id="modal-date" placeholder="เช่น 1 ม.ค. 2568" autocomplete="off" />
+      </div>
+      <div class="modal-field">
+        <label>เวลา <span style="opacity:0.45;font-weight:400">(ไม่บังคับ)</span></label>
+        <input type="text" id="modal-time" placeholder="เช่น 09:30" autocomplete="off" />
       </div>
       <div class="modal-field">
         <label>รายละเอียด</label>
@@ -1926,6 +2198,25 @@
       </div>
       <input id="dt-slider" type="range" min="6" max="40" value="17" />
     </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">เวลา</span>
+      <div class="ctrl-row">
+        <button class="ctrl-btn" id="tm-dn" title="เล็กลง">A&minus;</button>
+        <span class="size-val" id="tm-val">&mdash;</span>
+        <button class="ctrl-btn" id="tm-up" title="ใหญ่ขึ้น">A+</button>
+      </div>
+      <input id="tm-slider" type="range" min="6" max="40" value="11" />
+    </div>
+
+    <div class="ctrl-group">
+      <span class="ctrl-label">ขนาดรูปภาพ</span>
+      <div class="ctrl-row">
+        <button class="ctrl-btn" id="imgw-dn" title="เล็กลง">A&minus;</button>
+        <span class="size-val" id="imgw-val">180px</span>
+        <button class="ctrl-btn" id="imgw-up" title="ใหญ่ขึ้น">A+</button>
+      </div>
+      <input id="imgw-slider" type="range" min="60" max="400" step="20" value="180" />
+    </div>
 
     <div class="ctrl-group" style="display:none;">
       <span class="ctrl-label">คอลัมน์/แถว</span>
@@ -2069,14 +2360,18 @@
         const titleSub = document.querySelector('#page-title p');
         const titleSub2 = document.querySelector('#page-title p.sub2');
 
-        /* Capture current desc/date text from DOM */
+        /* Capture current desc/date/time text from DOM */
         const eventsSnapshot = allEvents.map((ev, idx) => {
-          const descEl = document.querySelector(`[data-id="desc-${Math.floor(idx / COLS)}-${idx % COLS}"]`);
-          const dateEl = document.querySelector(`[data-id="date-${Math.floor(idx / COLS)}-${idx % COLS}"]`);
+          const r = Math.floor(idx / COLS), c = idx % COLS;
+          const descEl = document.querySelector(`[data-id="desc-${r}-${c}"]`);
+          const dateEl = document.querySelector(`[data-id="date-${r}-${c}"]`);
+          const timeEl = document.querySelector(`[data-id="time-${r}-${c}"]`);
           return {
             date: dateEl ? getEditableText(dateEl) : ev.date,
+            time: timeEl ? getEditableText(timeEl) : (ev.time || ''),
             desc: descEl ? getEditableText(descEl) : ev.desc,
             icon: ev.icon,
+            imgs: ev.imgs ? [...ev.imgs] : (ev.img ? [ev.img] : []),
           };
         });
 
@@ -2117,6 +2412,12 @@
         sub2FS: document.querySelector('#page-title p.sub2')?.style.fontSize || '',
         sub2Clr: document.getElementById('sub2-clr')?.value || '#9aaabb',
         dtFS: document.querySelector('.ev-date')?.style.fontSize || '',
+        tmFS: document.querySelector('.ev-time')?.style.fontSize || '',
+        tlColPx: TL_COL_PX,
+        tlBarPx: TL_BAR_PX,
+        cols: COLS,
+        evImgW: EV_IMG_W,
+        zoom: zoomLevel,
       };
     }
 
@@ -2135,6 +2436,21 @@
 
         allEvents = session.events;
         COLS = session.cols || 18;
+
+        /* Restore layout vars before renderTimeline so the grid is correct */
+        if (session.settings?.tlColPx) {
+          TL_COL_PX = Math.max(TL_COL_MIN, Math.min(TL_COL_MAX, session.settings.tlColPx));
+        }
+        if (session.settings?.tlBarPx) {
+          TL_BAR_PX = Math.max(TL_BAR_MIN, Math.min(TL_BAR_MAX, session.settings.tlBarPx));
+        }
+        if (session.settings?.cols) {
+          COLS = session.settings.cols;
+        }
+        if (session.settings?.evImgW) {
+          EV_IMG_W = Math.max(EV_IMG_W_MIN, Math.min(EV_IMG_W_MAX, session.settings.evImgW));
+          document.documentElement.style.setProperty('--ev-img-w', EV_IMG_W + 'px');
+        }
 
         document.querySelector('#page-title h1').textContent = session.title || 'Timeline';
         document.querySelector('#page-title p').textContent = session.subtitle || '';
@@ -2214,6 +2530,15 @@
         document.getElementById('sub2-clr').value = s.sub2Clr;
       }
       if (s.dtFS) allDates.forEach(el => el.style.fontSize = s.dtFS);
+      if (s.tmFS) document.querySelectorAll('.ev-time').forEach(el => el.style.fontSize = s.tmFS);
+      if (s.tlColPx) TL_COL_PX = Math.max(TL_COL_MIN, Math.min(TL_COL_MAX, s.tlColPx));
+      if (s.tlBarPx) TL_BAR_PX = Math.max(TL_BAR_MIN, Math.min(TL_BAR_MAX, s.tlBarPx));
+      if (s.cols)    COLS = s.cols;
+      if (s.evImgW) {
+        EV_IMG_W = Math.max(EV_IMG_W_MIN, Math.min(EV_IMG_W_MAX, s.evImgW));
+        document.documentElement.style.setProperty('--ev-img-w', EV_IMG_W + 'px');
+      }
+      if (s.zoom) applyZoom(s.zoom);
 
       /* Sync control bar display values */
       const fsVal = document.getElementById('fs-val');
@@ -2252,6 +2577,18 @@
         dtVal.textContent = s.dtFS;
         const sl = document.getElementById('dt-slider');
         if (sl) sl.value = parseFloat(s.dtFS);
+      }
+      const tmVal = document.getElementById('tm-val');
+      if (s.tmFS && tmVal) {
+        tmVal.textContent = s.tmFS;
+        const sl = document.getElementById('tm-slider');
+        if (sl) sl.value = parseFloat(s.tmFS);
+      }
+      if (s.evImgW) {
+        const imgwV = document.getElementById('imgw-val');
+        const imgwSl = document.getElementById('imgw-slider');
+        if (imgwV) imgwV.textContent = EV_IMG_W + 'px';
+        if (imgwSl) imgwSl.value = EV_IMG_W;
       }
     }
 
@@ -2562,6 +2899,113 @@
     /* ── State ── */
     let allEvents = [];
     let COLS = 18;
+    let TL_COL_PX = 220; /* px per timeline column — controls line length */
+    const TL_COL_MIN = 80;
+    const TL_COL_MAX = 600;
+    const TL_COL_STEP = 20;
+
+    let TL_BAR_PX = 12; /* px height of the timeline bar */
+    const TL_BAR_MIN = 2;
+    const TL_BAR_MAX = 40;
+    const TL_BAR_STEP = 2;
+
+    /* ── Rows helpers ── */
+    function getRowCount() {
+      return allEvents.length > 0 ? Math.ceil(allEvents.length / COLS) : 1;
+    }
+
+    function updateRowsDisplay() {
+      const el = document.getElementById('rows-val');
+      if (!el) return;
+      el.textContent = getRowCount();
+      /* disable − when 1 row, disable + when 1 event per row */
+      const dn = document.getElementById('rows-dn');
+      const up = document.getElementById('rows-up');
+      if (dn) dn.disabled = getRowCount() <= 1;
+      if (up) up.disabled = COLS <= 1;
+    }
+
+    function setRows(n) {
+      if (!allEvents.length) return;
+      const clamped = Math.max(1, Math.min(n, allEvents.length));
+      COLS = Math.max(1, Math.ceil(allEvents.length / clamped));
+      renderTimeline();   /* renderTimeline calls updateRowsDisplay + fitContentToCanvas */
+      scheduleSave();
+    }
+
+    /* ══════════════════════════════════════════════════
+       Event image helpers
+       ══════════════════════════════════════════════════ */
+    let EV_IMG_W = 180;
+    const EV_IMG_W_MIN = 60;
+    const EV_IMG_W_MAX = 400;
+    const EV_IMG_W_STEP = 20;
+    const EV_IMG_MAX = 2; /* max images per event */
+    document.documentElement.style.setProperty('--ev-img-w', EV_IMG_W + 'px');
+
+    let _imgFileInput = null;
+    let _imgTargetIdx = -1;
+    let _imgReplaceIdx = -1;
+
+    function _openImgPicker(evIdx) {
+      if (!_imgFileInput) {
+        _imgFileInput = document.createElement('input');
+        _imgFileInput.type = 'file';
+        _imgFileInput.accept = 'image/*';
+        _imgFileInput.style.display = 'none';
+        document.body.appendChild(_imgFileInput);
+        _imgFileInput.addEventListener('change', () => {
+          const file = _imgFileInput.files[0];
+          if (file) _loadImgFile(file, _imgTargetIdx);
+          _imgFileInput.value = '';
+        });
+      }
+      _imgTargetIdx = evIdx;
+      _imgFileInput.click();
+    }
+
+    function _loadImgFile(file, evIdx) {
+      const replaceAt = _imgReplaceIdx;
+      _imgReplaceIdx = -1;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        _compressImg(e.target.result, 800, 600, (compressed) => {
+          const ev = allEvents[evIdx];
+          /* migrate legacy ev.img → ev.imgs */
+          const imgs = ev.imgs ? [...ev.imgs] : (ev.img ? [ev.img] : []);
+          if (replaceAt >= 0 && replaceAt < imgs.length) {
+            imgs[replaceAt] = compressed;
+          } else {
+            if (imgs.length >= EV_IMG_MAX) return; /* max reached */
+            imgs.push(compressed);
+          }
+          pushUndo();
+          allEvents[evIdx] = { ...ev, imgs, img: '' };
+          const s = gatherSettings();
+          renderTimeline();
+          restoreSettings(s);
+          scheduleSave();
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function _compressImg(dataUrl, maxW, maxH, cb) {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > maxW || h > maxH) {
+          const ratio = Math.min(maxW / w, maxH / h);
+          w = Math.round(w * ratio);
+          h = Math.round(h * ratio);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        cb(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.src = dataUrl;
+    }
 
     /* ── Render timeline ── */
     function renderTimeline() {
@@ -2577,11 +3021,12 @@
         const N = rowEvents.length;
         const section = document.createElement('div');
         section.className = 'tl-section';
-        section.style.gridTemplateColumns = `repeat(${N}, 1fr)`;
+        section.style.gridTemplateColumns = `repeat(${N}, ${TL_COL_PX}px)`;
 
         const barBg = document.createElement('div');
         barBg.className = 'tl-bar-bg';
         barBg.style.gridColumn = `1 / ${N + 1}`;
+        barBg.style.height = TL_BAR_PX + 'px';
         section.appendChild(barBg);
 
         rowEvents.forEach((ev, i) => {
@@ -2625,6 +3070,13 @@
           dateEl.dataset.id = `date-${r}-${i}`;
           dateEl.style.color = col;
           dateEl.textContent = ev.date;
+
+          const timeEl = document.createElement('div');
+          timeEl.className = 'ev-time';
+          timeEl.contentEditable = 'true';
+          timeEl.dataset.id = `time-${r}-${i}`;
+          timeEl.style.color = col;
+          timeEl.textContent = ev.time || '';
 
           const descEl = document.createElement('div');
           descEl.className = 'ev-desc';
@@ -2689,7 +3141,87 @@
           cell.appendChild(stem);
           cell.appendChild(circle);
           cell.appendChild(dateEl);
+          cell.appendChild(timeEl);
           cell.appendChild(descEl);
+
+          /* ── Image block: supports up to EV_IMG_MAX images per event ── */
+          /* migrate legacy ev.img → ev.imgs */
+          const evImgs = ev.imgs ? ev.imgs : (ev.img ? [ev.img] : []);
+
+          const imgsOuter = document.createElement('div');
+          imgsOuter.className = 'ev-imgs-outer';
+
+          evImgs.forEach((src, imgI) => {
+            const imgWrap = document.createElement('div');
+            imgWrap.className = 'ev-img-wrap';
+
+            const imgEl = document.createElement('img');
+            imgEl.className = 'ev-img';
+            imgEl.src = src;
+            imgEl.alt = '';
+            imgEl.title = 'ดับเบิลคลิกเพื่อเปลี่ยนรูป';
+            imgEl.addEventListener('dblclick', (e) => {
+              e.stopPropagation();
+              /* replace this specific image slot */
+              _imgReplaceIdx = imgI;
+              _openImgPicker(evIdx);
+            });
+            imgWrap.appendChild(imgEl);
+
+            const imgDel = document.createElement('button');
+            imgDel.className = 'ev-img-del';
+            imgDel.innerHTML = '&times;';
+            imgDel.title = 'ลบรูป';
+            imgDel.addEventListener('click', (e) => {
+              e.stopPropagation();
+              pushUndo();
+              const newImgs = evImgs.filter((_, j) => j !== imgI);
+              allEvents[evIdx] = { ...allEvents[evIdx], imgs: newImgs, img: '' };
+              const s = gatherSettings();
+              renderTimeline();
+              restoreSettings(s);
+              scheduleSave();
+            });
+            imgWrap.appendChild(imgDel);
+            imgsOuter.appendChild(imgWrap);
+          });
+
+          /* Show add-hint when < max images */
+          if (evImgs.length < EV_IMG_MAX) {
+            const hint = document.createElement('div');
+            hint.className = 'ev-img-hint';
+            hint.title = 'ดับเบิลคลิก หรือ วางรูปภาพลงบน Event';
+            hint.innerHTML = '<i class="fa-solid fa-camera"></i>';
+            hint.addEventListener('click', (e) => { e.stopPropagation(); _imgReplaceIdx = -1; _openImgPicker(evIdx); });
+            imgsOuter.appendChild(hint);
+          }
+
+          cell.appendChild(imgsOuter);
+
+          /* dblclick anywhere on cell (except circle/handle/desc/img) → add image */
+          cell.addEventListener('dblclick', (e) => {
+            if (e.target.closest('.ev-circle,.ev-drag-handle,.ev-desc,.ev-img,.ev-img-del')) return;
+            if (evImgs.length >= EV_IMG_MAX) return;
+            _imgReplaceIdx = -1;
+            _openImgPicker(evIdx);
+          });
+
+          /* Drag-and-drop image file onto cell */
+          cell.addEventListener('dragover', (e) => {
+            if (!e.dataTransfer.types.includes('Files')) return;
+            e.preventDefault(); e.stopPropagation();
+            e.dataTransfer.dropEffect = 'copy';
+            cell.classList.add('img-drop-over');
+          });
+          cell.addEventListener('dragleave', () => cell.classList.remove('img-drop-over'));
+          cell.addEventListener('drop', (e) => {
+            if (!e.dataTransfer.types.includes('Files')) return;
+            e.preventDefault(); e.stopPropagation();
+            cell.classList.remove('img-drop-over');
+            const file = [...e.dataTransfer.files].find(f => f.type.startsWith('image/'));
+            if (file) { _imgReplaceIdx = -1; _loadImgFile(file, evIdx); }
+          });
+
           section.appendChild(cell);
         });
 
@@ -2699,6 +3231,9 @@
       /* Show Add-Event FAB */
       const addFab = document.getElementById('btn-add-event');
       if (addFab) addFab.classList.add('visible');
+
+      /* Update rows display in top bar */
+      updateRowsDisplay();
 
       /* Fit content into canvas (RAF-deferred so DOM is fully painted) */
       fitContentToCanvas();
@@ -2710,13 +3245,13 @@
     function downloadTemplate() {
       const wb = XLSX.utils.book_new();
       const data = [
-        ['NO', 'DATE', 'EVENT'],
-        [1, '1 ม.ค. 2568', 'ตัวอย่างเหตุการณ์ที่ 1'],
-        [2, '15 ม.ค. 2568', 'ตัวอย่างเหตุการณ์ที่ 2'],
-        [3, '1 ก.พ. 2568', 'ตัวอย่างเหตุการณ์ที่ 3'],
+        ['NO', 'DATE', 'TIME', 'EVENT'],
+        [1, '1 ม.ค. 2568', '09:00', 'ตัวอย่างเหตุการณ์ที่ 1'],
+        [2, '15 ม.ค. 2568', '14:30', 'ตัวอย่างเหตุการณ์ที่ 2'],
+        [3, '1 ก.พ. 2568', '',      'ตัวอย่างเหตุการณ์ที่ 3'],
       ];
       const ws = XLSX.utils.aoa_to_sheet(data);
-      ws['!cols'] = [{ wch: 6 }, { wch: 18 }, { wch: 60 }];
+      ws['!cols'] = [{ wch: 6 }, { wch: 18 }, { wch: 10 }, { wch: 60 }];
       XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
       XLSX.writeFile(wb, 'TIMELINE_TEMPLATE.xlsx');
     }
@@ -2746,13 +3281,15 @@
         const firstRow = json[0];
         const keys = Object.keys(firstRow);
 
-        let dateKey = keys.find(k => /^date$/i.test(k.trim())) || keys.find(k => /date|วันที่/i.test(k)) || keys[1];
+        let dateKey  = keys.find(k => /^date$/i.test(k.trim())) || keys.find(k => /date|วันที่/i.test(k)) || keys[1];
+        let timeKey  = keys.find(k => /^time$/i.test(k.trim())) || keys.find(k => /time|เวลา/i.test(k));
         let eventKey = keys.find(k => /^event$/i.test(k.trim())) || keys.find(k => /event|เหตุการณ์|รายละเอียด/i.test(k)) || keys[2];
 
         allEvents = json
           .filter(row => row[dateKey] || row[eventKey])
           .map(row => ({
             date: String(row[dateKey] || '').trim(),
+            time: timeKey ? String(row[timeKey] || '').trim() : '',
             desc: String(row[eventKey] || '').trim(),
             icon: autoIcon(String(row[eventKey] || ''))
           }));
@@ -2886,6 +3423,21 @@
     function showAppUI() {
       document.getElementById('top-bar').classList.add('visible');
       document.getElementById('canvas-wrap').style.display = 'block';
+      /* Show rows selector */
+      const rowsCtrl = document.getElementById('rows-ctrl');
+      const rowsSep  = document.getElementById('rows-sep');
+      if (rowsCtrl) rowsCtrl.style.display = 'flex';
+      if (rowsSep)  rowsSep.style.display  = '';
+      /* Show spacing selector */
+      const spacingCtrl = document.getElementById('spacing-ctrl');
+      const spacingSep  = document.getElementById('spacing-sep');
+      if (spacingCtrl) spacingCtrl.style.display = 'flex';
+      if (spacingSep)  spacingSep.style.display  = '';
+      /* Show bar thickness selector */
+      const barhCtrl = document.getElementById('barh-ctrl');
+      const barhSep  = document.getElementById('barh-sep');
+      if (barhCtrl) barhCtrl.style.display = 'flex';
+      if (barhSep)  barhSep.style.display  = '';
       const panel = document.getElementById('ctrl-panel');
       if (!panel.classList.contains('open')) {
         panel.classList.add('open');
@@ -2996,6 +3548,19 @@
       }
       if (dtSlider) dtSlider.oninput = () => applyDtFS(parseInt(dtSlider.value));
 
+      /* Time font size */
+      const tmVal = document.getElementById('tm-val');
+      const tmSlider = document.getElementById('tm-slider');
+      let curTmFS = tmSlider ? parseInt(tmSlider.value) : 11;
+      function applyTmFS(v) {
+        curTmFS = Math.max(6, v);
+        document.querySelectorAll('.ev-time').forEach(el => { el.style.fontSize = curTmFS + 'px'; });
+        tmVal.textContent = curTmFS + 'px';
+        if (tmSlider) tmSlider.value = curTmFS;
+        scheduleSave();
+      }
+      if (tmSlider) tmSlider.oninput = () => applyTmFS(parseInt(tmSlider.value));
+
       /* Columns per row */
       const colsVal = document.getElementById('cols-val');
       function updateColsVal() { colsVal.textContent = COLS; }
@@ -3013,6 +3578,22 @@
       document.getElementById('sub2-dn').onclick = () => applySub2FS(curSub2FS - 1);
       document.getElementById('dt-up').onclick = () => applyDtFS(curDtFS + 1);
       document.getElementById('dt-dn').onclick = () => applyDtFS(curDtFS - 1);
+      document.getElementById('tm-up').onclick = () => applyTmFS(curTmFS + 1);
+      document.getElementById('tm-dn').onclick = () => applyTmFS(curTmFS - 1);
+
+      /* Image width */
+      const imgwSlider = document.getElementById('imgw-slider');
+      const imgwVal = document.getElementById('imgw-val');
+      function applyImgW(v) {
+        EV_IMG_W = Math.max(EV_IMG_W_MIN, Math.min(EV_IMG_W_MAX, Math.round(v / EV_IMG_W_STEP) * EV_IMG_W_STEP));
+        document.documentElement.style.setProperty('--ev-img-w', EV_IMG_W + 'px');
+        imgwVal.textContent = EV_IMG_W + 'px';
+        if (imgwSlider) imgwSlider.value = EV_IMG_W;
+        scheduleSave();
+      }
+      if (imgwSlider) imgwSlider.oninput = () => applyImgW(parseInt(imgwSlider.value));
+      document.getElementById('imgw-up').onclick = () => applyImgW(EV_IMG_W + EV_IMG_W_STEP);
+      document.getElementById('imgw-dn').onclick = () => applyImgW(EV_IMG_W - EV_IMG_W_STEP);
 
       document.getElementById('cols-up').onclick = () => {
         COLS = Math.min(allEvents.length, COLS + 1);
@@ -3023,6 +3604,40 @@
         COLS = Math.max(3, COLS - 1);
         updateColsVal();
         renderTimeline();
+      };
+
+      /* Rows control in top bar */
+      const rowsDn = document.getElementById('rows-dn');
+      const rowsUp = document.getElementById('rows-up');
+      if (rowsDn) rowsDn.onclick = () => setRows(getRowCount() - 1);
+      if (rowsUp) rowsUp.onclick = () => setRows(getRowCount() + 1);
+
+      /* Spacing (line length) control in top bar */
+      const spacingDn = document.getElementById('spacing-dn');
+      const spacingUp = document.getElementById('spacing-up');
+      if (spacingDn) spacingDn.onclick = () => {
+        TL_COL_PX = Math.max(TL_COL_MIN, TL_COL_PX - TL_COL_STEP);
+        renderTimeline();
+        scheduleSave();
+      };
+      if (spacingUp) spacingUp.onclick = () => {
+        TL_COL_PX = Math.min(TL_COL_MAX, TL_COL_PX + TL_COL_STEP);
+        renderTimeline();
+        scheduleSave();
+      };
+
+      /* Bar thickness control in top bar */
+      const barhDn = document.getElementById('barh-dn');
+      const barhUp = document.getElementById('barh-up');
+      if (barhDn) barhDn.onclick = () => {
+        TL_BAR_PX = Math.max(TL_BAR_MIN, TL_BAR_PX - TL_BAR_STEP);
+        document.querySelectorAll('.tl-bar-bg').forEach(el => el.style.height = TL_BAR_PX + 'px');
+        scheduleSave();
+      };
+      if (barhUp) barhUp.onclick = () => {
+        TL_BAR_PX = Math.min(TL_BAR_MAX, TL_BAR_PX + TL_BAR_STEP);
+        document.querySelectorAll('.tl-bar-bg').forEach(el => el.style.height = TL_BAR_PX + 'px');
+        scheduleSave();
       };
 
       /* Visual style picker */
@@ -3101,6 +3716,7 @@
       applySubFS(curSubFS);
       applySub2FS(curSub2FS);
       applyDtFS(curDtFS);
+      applyTmFS(curTmFS);
       updateColsVal();
     }
 
@@ -3360,7 +3976,7 @@
 
         /* Pre-cache text lines for all text elements */
         const textCache = new Map();
-        [...tEl.querySelectorAll('h1, p'), ...rEl.querySelectorAll('.ev-date, .ev-desc')]
+        [...tEl.querySelectorAll('h1, p'), ...rEl.querySelectorAll('.ev-date, .ev-time, .ev-desc')]
           .forEach(el => textCache.set(el, getRenderedLines(el)));
 
         /* ── Create jsPDF document ── */
@@ -3466,8 +4082,9 @@
           }
         });
 
-        /* Dates */
+        /* Dates + Times */
         rEl.querySelectorAll('.ev-date').forEach(el => drawEl(el, 'bold'));
+        rEl.querySelectorAll('.ev-time').forEach(el => { if (el.textContent.trim()) drawEl(el, 'normal'); });
 
         /*
          * Descriptions — clip each element to its own bounding rect in the PDF.
@@ -3543,10 +4160,13 @@
       const eventsSnapshot = allEvents.map((ev, idx) => {
         const descEl = document.querySelector(`[data-id="desc-${Math.floor(idx / COLS)}-${idx % COLS}"]`);
         const dateEl = document.querySelector(`[data-id="date-${Math.floor(idx / COLS)}-${idx % COLS}"]`);
+        const timeEl = document.querySelector(`[data-id="time-${Math.floor(idx / COLS)}-${idx % COLS}"]`);
         return {
           date: dateEl ? getEditableText(dateEl) : ev.date,
+          time: timeEl ? getEditableText(timeEl) : (ev.time || ''),
           desc: descEl ? getEditableText(descEl) : ev.desc,
           icon: ev.icon,
+          imgs: ev.imgs ? [...ev.imgs] : (ev.img ? [ev.img] : []),
         };
       });
 
@@ -3631,6 +4251,7 @@
           date: dateEl ? getEditableText(dateEl) : ev.date,
           desc: descEl ? getEditableText(descEl) : ev.desc,
           icon: ev.icon,
+          imgs: ev.imgs ? [...ev.imgs] : (ev.img ? [ev.img] : []),
         };
       });
       return {
@@ -3709,16 +4330,17 @@
        Zoom  (Ctrl/Cmd + Scroll  or  Trackpad Pinch)
        ═══════════════════════════════════════════════════ */
     let zoomLevel = 1.0;
-    const ZOOM_MIN = 0.5;   /* 50% */
-    const ZOOM_MAX = 1.75;  /* 175% */
-    const ZOOM_STEP = 0.02; /* 2% ต่อ scroll tick */
-    const ZOOM_BTN_STEP = 0.1; /* 10% ต่อครั้งที่กดปุ่ม */
+    const ZOOM_MIN = 0.25;  /* 25% */
+    const ZOOM_MAX = 4.0;   /* 400% */
+    const ZOOM_STEP = 0.025; /* 2.5% ต่อ scroll tick */
+    const ZOOM_BTN_STEP = 0.25; /* 25% ต่อครั้งที่กดปุ่ม */
     /* snap points ที่จะดูดค่าเข้าหาเมื่อใกล้ */
-    const ZOOM_SNAPS = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75];
-    const ZOOM_SNAP_TOL = 0.015;
+    const ZOOM_SNAPS = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0, 4.0];
+    const ZOOM_SNAP_TOL = 0.04;
     let _zoomHudTimer = null;
+    let _zoomAnimRaf = null;
 
-    function applyZoom(newZ, snap = false) {
+    function applyZoom(newZ, snap = false, animate = false) {
       let z = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, newZ));
       /* snap to nearest anchor when close enough */
       if (snap) {
@@ -3726,9 +4348,34 @@
           if (Math.abs(z - s) <= ZOOM_SNAP_TOL) { z = s; break; }
         }
       }
-      zoomLevel = parseFloat(z.toFixed(3));
       const wrap = document.getElementById('canvas-wrap');
-      if (wrap) wrap.style.transform = `scale(${zoomLevel})`;
+      if (animate && wrap) {
+        /* smooth animation for button clicks via RAF lerp */
+        if (_zoomAnimRaf) cancelAnimationFrame(_zoomAnimRaf);
+        const from = zoomLevel;
+        const to = z;
+        const dur = 180;
+        const start = performance.now();
+        function tick(now) {
+          const t = Math.min(1, (now - start) / dur);
+          const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+          const cur = from + (to - from) * ease;
+          zoomLevel = parseFloat(cur.toFixed(4));
+          if (wrap) wrap.style.transform = `scale(${zoomLevel})`;
+          _updateZoomHUD();
+          if (t < 1) _zoomAnimRaf = requestAnimationFrame(tick);
+          else { zoomLevel = parseFloat(to.toFixed(4)); wrap.style.transform = `scale(${zoomLevel})`; scheduleSave(); }
+        }
+        _zoomAnimRaf = requestAnimationFrame(tick);
+      } else {
+        if (_zoomAnimRaf) { cancelAnimationFrame(_zoomAnimRaf); _zoomAnimRaf = null; }
+        zoomLevel = parseFloat(z.toFixed(4));
+        if (wrap) wrap.style.transform = `scale(${zoomLevel})`;
+        _updateZoomHUD();
+      }
+    }
+
+    function _updateZoomHUD() {
       const hud = document.getElementById('zoom-hud');
       const val = document.getElementById('zoom-val');
       if (hud && val) {
@@ -3739,13 +4386,16 @@
       }
     }
 
+    let _wheelSaveTimer = null;
     document.addEventListener('wheel', (e) => {
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
-        /* normalize across devices: clamp deltaY, scale by 0.001 */
-        const raw = Math.max(-20, Math.min(20, e.deltaY));
-        const delta = -raw * ZOOM_STEP * 0.5;
-        applyZoom(zoomLevel + delta, true);
+        /* normalize across devices: clamp deltaY */
+        const raw = Math.max(-8, Math.min(8, e.deltaY));
+        const delta = -raw * ZOOM_STEP;
+        applyZoom(zoomLevel + delta, false, false); /* no snap/animate during scroll for max responsiveness */
+        clearTimeout(_wheelSaveTimer);
+        _wheelSaveTimer = setTimeout(() => scheduleSave(), 600);
       }
     }, { passive: false });
 
@@ -3754,6 +4404,7 @@
        ═══════════════════════════════════════════════════ */
     function openAddEventModal() {
       document.getElementById('modal-date').value = '';
+      document.getElementById('modal-time').value = '';
       document.getElementById('modal-desc').value = '';
       document.getElementById('add-event-modal').classList.add('open');
       setTimeout(() => document.getElementById('modal-date').focus(), 80);
@@ -3765,11 +4416,12 @@
 
     function confirmAddEvent() {
       const date = document.getElementById('modal-date').value.trim();
+      const time = document.getElementById('modal-time').value.trim();
       const desc = document.getElementById('modal-desc').value.trim();
       if (!date && !desc) { document.getElementById('modal-date').focus(); return; }
       pushUndo();
       const s = gatherSettings();
-      allEvents.push({ date: date || '–', desc: desc || '–', icon: autoIcon(desc) });
+      allEvents.push({ date: date || '–', time: time, desc: desc || '–', icon: autoIcon(desc) });
       /* If all events now fill an extra row, bump COLS so it stays readable */
       if (allEvents.length > 1 && COLS < allEvents.length && allEvents.length % COLS === 1) {
         COLS = Math.max(3, Math.round(allEvents.length / 2));
@@ -3854,8 +4506,8 @@
     /* ═══════════════════════════════════════════════════
        Zoom Buttons
        ═══════════════════════════════════════════════════ */
-    document.getElementById('zoom-in-btn')?.addEventListener('click', () => applyZoom(zoomLevel + ZOOM_BTN_STEP, true));
-    document.getElementById('zoom-out-btn')?.addEventListener('click', () => applyZoom(zoomLevel - ZOOM_BTN_STEP, true));
+    document.getElementById('zoom-in-btn')?.addEventListener('click', () => applyZoom(zoomLevel + ZOOM_BTN_STEP, true, true));
+    document.getElementById('zoom-out-btn')?.addEventListener('click', () => applyZoom(zoomLevel - ZOOM_BTN_STEP, true, true));
 
     /* ═══════════════════════════════════════════════════
        Canvas Size & Aspect Ratio Preview
@@ -3869,6 +4521,9 @@
       const scaler = document.getElementById('content-scaler');
       const sel = document.getElementById('canvas-size-select');
       if (!wrap || !sel || !scaler) return;
+
+      /* Preset selected by user → release any locked custom height */
+      _customCanvasH = false;
 
       const size = getCanvasSize();
 
@@ -3898,6 +4553,8 @@
     /* ── Scale #content-scaler so everything fits inside canvas bounds ── */
     let _fitRafId = null;
     let _pdfExporting = false; /* flag: suppress auto-fit while PDF is rendering */
+    let _customCanvasH = false; /* true when user has manually dragged the canvas height */
+
     function fitContentToCanvas() {
       if (_pdfExporting) return; /* don't touch scaler mid-export */
       if (_fitRafId) cancelAnimationFrame(_fitRafId);
@@ -3930,23 +4587,30 @@
       const PAD_X = 96;  /* 48 × 2 */
       const PAD_Y = 112; /* 56 × 2 */
       const availW = wrap.clientWidth  - PAD_X;
-      const availH = wrap.clientHeight - PAD_Y;
 
-      if (naturalW <= 0 || naturalH <= 0 || availW <= 0 || availH <= 0) return;
+      if (naturalW <= 0 || naturalH <= 0 || availW <= 0) return;
 
-      /* ③ Compute uniform fit scale (never upscale beyond 1) */
-      const s = Math.min(availW / naturalW, availH / naturalH, 1);
+      /* ③ Fit by width only — content always spans full paper width.
+            Height adapts to however many rows are shown (never clip vertically). */
+      const s = Math.min(availW / naturalW, 1);
 
-      if (Math.abs(s - 1) < 0.002) {
-        /* Content already fits — clear any leftover transform */
+      /* ④ Adjust wrap height — only when the user hasn't locked a custom height */
+      if (!_customCanvasH) {
+        wrap.style.height = Math.ceil(naturalH * s + PAD_Y) + 'px';
+      }
+
+      /* ⑤ Centre horizontally: shift right by half the leftover space.
+            transform-origin is top left, so translateX(offsetX) scale(s)
+            means: first scale from top-left, then nudge the result into centre. */
+      const visualW  = naturalW * s;
+      const offsetX  = Math.max(0, (availW - visualW) / 2);
+
+      scaler.style.width = naturalW + 'px';
+      if (Math.abs(s - 1) < 0.002 && offsetX < 1) {
         scaler.style.transform = '';
-        scaler.style.width = '';
       } else {
-        /* ④ Apply scale; fix scaler width to its natural size so that
-              the scaled visual footprint = naturalW*s × naturalH*s
-              and the canvas overflow:hidden clips any rounding residue */
-        scaler.style.width = naturalW + 'px';
-        scaler.style.transform = `scale(${s.toFixed(5)})`;
+        scaler.style.transform =
+          `translateX(${offsetX.toFixed(2)}px) scale(${s.toFixed(5)})`;
       }
     }
 
@@ -3971,6 +4635,128 @@
       applyCanvasPaperSize();
       scheduleSave();
     });
+
+    /* ══════════════════════════════════════════════════
+       Free-resize: drag right/bottom/corner of canvas
+       ══════════════════════════════════════════════════ */
+    (function _initCanvasResize() {
+      const wrap = document.getElementById('canvas-wrap');
+      if (!wrap) return;
+
+      let state = null; /* { dir, x0, y0, w0, h0 } */
+
+      const handles = { 'crh-e': 'e', 'crh-s': 's', 'crh-se': 'se' };
+
+      Object.entries(handles).forEach(([id, dir]) => {
+        const h = document.getElementById(id);
+        if (!h) return;
+
+        h.addEventListener('pointerdown', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          h.setPointerCapture(e.pointerId);
+          state = {
+            dir,
+            x0: e.clientX, y0: e.clientY,
+            w0: wrap.offsetWidth, h0: wrap.offsetHeight,
+          };
+          wrap.classList.add('canvas-resizing');
+          document.body.style.userSelect = 'none';
+        });
+
+        h.addEventListener('pointermove', e => {
+          if (!state) return;
+          const { dir: d, x0, y0, w0, h0 } = state;
+          const dx = (e.clientX - x0) / zoomLevel;
+          const dy = (e.clientY - y0) / zoomLevel;
+          const MIN_W = 480, MIN_H = 200;
+
+          if (d === 'e' || d === 'se') {
+            wrap.style.width = Math.round(Math.max(MIN_W, w0 + dx)) + 'px';
+            fitContentToCanvas(); /* scale content to new width */
+          }
+          if (d === 's' || d === 'se') {
+            wrap.style.height = Math.round(Math.max(MIN_H, h0 + dy)) + 'px';
+            _customCanvasH = true; /* lock: don't let _doFit override height */
+          }
+        });
+
+        h.addEventListener('pointerup', () => {
+          if (!state) return;
+          state = null;
+          wrap.classList.remove('canvas-resizing');
+          document.body.style.userSelect = '';
+          scheduleSave();
+        });
+
+        h.addEventListener('pointercancel', () => {
+          state = null;
+          wrap.classList.remove('canvas-resizing');
+          document.body.style.userSelect = '';
+        });
+      });
+    })();
+
+    /* ══════════════════════════════════════════════════
+       Spacebar pan: hold Space → grab-drag the viewport
+       ══════════════════════════════════════════════════ */
+    (function _initSpacePan() {
+      const viewport = document.getElementById('canvas-viewport');
+      if (!viewport) return;
+
+      let spaceDown = false;
+      let panning   = false;
+      let px = 0, py = 0; /* last pointer position */
+      let sx = 0, sy = 0; /* scroll at pan start */
+
+      function isEditingText() {
+        const el = document.activeElement;
+        if (!el) return false;
+        const tag = el.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+        if (el.isContentEditable) return true;
+        return false;
+      }
+
+      document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && !e.repeat && !isEditingText()) {
+          e.preventDefault();
+          spaceDown = true;
+          document.body.classList.add('space-pan');
+        }
+      });
+
+      document.addEventListener('keyup', (e) => {
+        if (e.code === 'Space') {
+          spaceDown = false;
+          panning   = false;
+          document.body.classList.remove('space-pan', 'panning');
+        }
+      });
+
+      viewport.addEventListener('pointerdown', (e) => {
+        if (!spaceDown || e.button !== 0) return;
+        e.preventDefault();
+        panning = true;
+        px = e.clientX;
+        py = e.clientY;
+        sx = viewport.scrollLeft;
+        sy = viewport.scrollTop;
+        viewport.setPointerCapture(e.pointerId);
+        document.body.classList.add('panning');
+      });
+
+      viewport.addEventListener('pointermove', (e) => {
+        if (!panning) return;
+        const dx = e.clientX - px;
+        const dy = e.clientY - py;
+        viewport.scrollLeft = sx - dx;
+        viewport.scrollTop  = sy - dy;
+      });
+
+      viewport.addEventListener('pointerup',     () => { panning = false; document.body.classList.remove('panning'); });
+      viewport.addEventListener('pointercancel', () => { panning = false; document.body.classList.remove('panning'); });
+    })();
 
     /* ── Auto-restore on page load ── */
     tryRestore();
