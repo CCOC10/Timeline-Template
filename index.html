@@ -75,7 +75,10 @@
     }
 
     html {
-      font-size: 16px;
+      font-size: 18px; /* one density "stop" up from 16px — scales every
+                          rem-based UI-chrome size (type scale, icons,
+                          labels) uniformly; document content sizes are
+                          separate px sliders and are unaffected */
     }
 
     * {
@@ -108,7 +111,7 @@
     /* ── Canvas viewport: the scrollable stage that holds the paper ── */
     #canvas-viewport {
       position: fixed;
-      top: 80px;
+      top: 92px;
       left: 0;
       right: 0;
       bottom: 0;
@@ -119,7 +122,7 @@
     }
 
     #canvas-viewport.shifted {
-      left: 256px;
+      left: 288px;
     }
 
     /* ── Canvas stage: centers the paper inside the viewport ── */
@@ -390,9 +393,9 @@
       background: var(--surface-white);
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-lg);
-      padding: 12px;
-      width: 284px;
-      max-height: 340px;
+      padding: 13px;
+      width: 312px;
+      max-height: 370px;
       overflow-y: auto;
     }
 
@@ -452,8 +455,8 @@
     }
 
     #icon-picker .ip-item {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       border: none;
       border-radius: var(--radius-sm);
       background: var(--surface-low);
@@ -647,10 +650,10 @@
     /* ── Top Bar: floating capsule toolbar ── */
     #top-bar {
       position: fixed;
-      top: 12px;
-      left: 16px;
-      right: 16px;
-      height: 56px;
+      top: 14px;
+      left: 18px;
+      right: 18px;
+      height: 64px;
       z-index: 300;
       background: var(--surface-white);
       border: 1px solid var(--outline);
@@ -658,8 +661,8 @@
       box-shadow: var(--shadow-md);
       display: none;
       align-items: center;
-      gap: 4px;
-      padding: 0 20px;
+      gap: 5px;
+      padding: 0 22px;
     }
 
     #top-bar.visible {
@@ -689,8 +692,8 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      height: 36px;
-      padding: 0 12px;
+      height: 40px;
+      padding: 0 13px;
       border: none;
       border-radius: var(--radius-sm);
       font-family: var(--font-ui);
@@ -719,7 +722,7 @@
     }
 
     .tb-btn.tb-icon-only {
-      width: 36px;
+      width: 40px;
       padding: 0;
     }
 
@@ -770,7 +773,7 @@
     .tb-chip {
       background: var(--surface-mid);
       border-radius: var(--radius-full);
-      padding: 3px;
+      padding: 4px;
       margin: 0 3px;
     }
 
@@ -842,7 +845,7 @@
 
     /* Canvas size select in top bar */
     #canvas-size-select {
-      height: 36px;
+      height: 40px;
       padding: 0 26px 0 10px;
       border: 1px solid var(--outline);
       border-radius: var(--radius-sm);
@@ -873,10 +876,10 @@
     /* ── Left Sidebar (flat Google-app style, no glass/blur) ── */
     #ctrl-panel {
       position: fixed;
-      top: 80px;
-      left: 16px;
-      bottom: 16px;
-      width: 224px;
+      top: 92px;
+      left: 18px;
+      bottom: 18px;
+      width: 252px;
       z-index: 200;
       background: var(--surface-white);
       border: 1px solid var(--outline);
@@ -886,7 +889,7 @@
       transform: translateX(-120%);
       transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
       overflow-y: auto;
-      padding: 16px 14px 24px;
+      padding: 18px 16px 26px;
     }
 
     #ctrl-panel.open {
@@ -963,8 +966,8 @@
     .tgl-switch {
       position: relative;
       display: inline-block;
-      width: 30px;
-      height: 18px;
+      width: 34px;
+      height: 20px;
       flex-shrink: 0;
       cursor: pointer;
     }
@@ -991,8 +994,8 @@
       position: absolute;
       top: 2px;
       left: 2px;
-      width: 14px;
-      height: 14px;
+      width: 16px;
+      height: 16px;
       border-radius: 50%;
       background: var(--surface-white);
       box-shadow: var(--shadow-xs);
@@ -1004,7 +1007,7 @@
     }
 
     .tgl-switch input:checked + .tgl-track::before {
-      transform: translateX(12px);
+      transform: translateX(14px);
     }
 
     .ctrl-group.tgl-off .ctrl-row,
@@ -1020,8 +1023,8 @@
     }
 
     #ctrl-panel button.ctrl-btn {
-      width: 28px;
-      height: 28px;
+      width: 32px;
+      height: 32px;
       border: none;
       border-radius: var(--radius-sm);
       background: var(--surface-mid);
@@ -1050,8 +1053,8 @@
     }
 
     #ctrl-panel input[type="color"] {
-      width: 24px;
-      height: 24px;
+      width: 27px;
+      height: 27px;
       border: 2px solid var(--surface-white);
       border-radius: 50%;
       padding: 0;
@@ -1398,8 +1401,8 @@
     }
 
     #zoom-controls button {
-      width: 32px;
-      height: 32px;
+      width: 36px;
+      height: 36px;
       border: none;
       border-radius: 50%;
       background: transparent;
@@ -3525,6 +3528,7 @@
 
     function setRows(n) {
       if (!allEvents.length) return;
+      syncEventsFromDOM(); /* capture live text under the OLD column count before it changes */
       const clamped = Math.max(1, Math.min(n, allEvents.length));
       COLS = Math.max(1, Math.ceil(allEvents.length / clamped));
       renderTimeline();   /* renderTimeline calls updateRowsDisplay + fitContentToCanvas */
@@ -4288,11 +4292,13 @@
       document.getElementById('iconsize-dn').onclick = () => { applyIconScale(EV_ICON_SCALE - EV_ICON_SCALE_STEP); scheduleSave(); };
 
       document.getElementById('cols-up').onclick = () => {
+        syncEventsFromDOM();
         COLS = Math.min(allEvents.length, COLS + 1);
         updateColsVal();
         renderTimeline();
       };
       document.getElementById('cols-dn').onclick = () => {
+        syncEventsFromDOM();
         COLS = Math.max(3, COLS - 1);
         updateColsVal();
         renderTimeline();
@@ -4308,11 +4314,13 @@
       const spacingDn = document.getElementById('spacing-dn');
       const spacingUp = document.getElementById('spacing-up');
       if (spacingDn) spacingDn.onclick = () => {
+        syncEventsFromDOM();
         TL_COL_PX = Math.max(TL_COL_MIN, TL_COL_PX - TL_COL_STEP);
         renderTimeline();
         scheduleSave();
       };
       if (spacingUp) spacingUp.onclick = () => {
+        syncEventsFromDOM();
         TL_COL_PX = Math.min(TL_COL_MAX, TL_COL_PX + TL_COL_STEP);
         renderTimeline();
         scheduleSave();
@@ -4372,6 +4380,7 @@
       const themeSelect = document.getElementById('theme-select');
       if (themeSelect) {
         themeSelect.onchange = (e) => {
+          syncEventsFromDOM();
           const currentSettings = gatherSettings();
           palette = palettes[e.target.value] || palettes.default;
           renderTimeline();
@@ -4954,6 +4963,26 @@
     let undoStack = [];
     let redoStack = [];
 
+    /* Writes whatever is currently live in the contenteditable DOM (date/
+       time/desc text the user may have just typed) back into `allEvents`.
+       `allEvents` is only ever updated at explicit snapshot points — typing
+       alone never touches it — so any function that mutates `allEvents`
+       and then calls renderTimeline() (delete/add/reorder/theme/style...)
+       was silently discarding unsaved live edits in every OTHER event,
+       since renderTimeline() rebuilds the DOM from `allEvents`. Called from
+       pushUndo() so every one of those call sites is covered in one place. */
+    function syncEventsFromDOM() {
+      allEvents.forEach((ev, idx) => {
+        const r = Math.floor(idx / COLS), c = idx % COLS;
+        const descEl = document.querySelector(`[data-id="desc-${r}-${c}"]`);
+        const dateEl = document.querySelector(`[data-id="date-${r}-${c}"]`);
+        const timeEl = document.querySelector(`[data-id="time-${r}-${c}"]`);
+        if (descEl) ev.desc = getEditableText(descEl);
+        if (dateEl) ev.date = getEditableText(dateEl);
+        if (timeEl) ev.time = getEditableText(timeEl);
+      });
+    }
+
     function snapshotState() {
       const titleH1 = document.querySelector('#page-title h1');
       const titleSub = document.querySelector('#page-title p');
@@ -4982,6 +5011,7 @@
     }
 
     function pushUndo() {
+      syncEventsFromDOM();
       undoStack.push(snapshotState());
       if (undoStack.length > 50) undoStack.shift();
       redoStack = [];
