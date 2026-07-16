@@ -9,33 +9,73 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700&display=swap');
 
-    /* ── Design Tokens (Stitch-2 MD3 Tonal System) ── */
+    /* ── Design Tokens (Google Material 3 tonal system) ── */
     :root {
-      --surface: #f7f9fb;
-      --surface-low: #f2f4f6;
-      --surface-mid: #eceef0;
-      --surface-high: #e6e8ea;
-      --surface-highest: #e0e3e5;
+      /* Neutral surfaces — Google's characteristic cool-gray scale */
+      --surface: #f8f9fa;
+      --surface-low: #f1f3f4;
+      --surface-mid: #e8eaed;
+      --surface-high: #dfe1e5;
+      --surface-highest: #d2d5da;
       --surface-white: #ffffff;
-      --on-surface: #191c1e;
-      --on-surface-var: #434655;
-      --primary: #4d556a;
-      --primary-ctr: #656d84;
-      --primary-fixed: #dae2fd;
-      --secondary-fixed: #d5e3fd;
-      --outline: #c3c6d7;
-      --shadow-sm: 0 2px 12px rgba(25, 28, 30, 0.06);
-      --shadow-md: 0 8px 32px rgba(25, 28, 30, 0.08);
-      --shadow-lg: 0 16px 48px rgba(25, 28, 30, 0.10);
-      /* ── Font family tokens ── */
-      --font-body: 'Sarabun', sans-serif;
-      --font-heading: 'Manrope', 'Sarabun', sans-serif;
+      --on-surface: #1f1f1f;
+      --on-surface-var: #444746;
+
+      /* Primary accent — deep navy (สีกรม) */
+      --primary: #00264b;
+      --primary-hover: #013a6d;
+      --primary-ctr: #013a6d;
+      --primary-fixed: #dce6f2;
+      --on-primary-fixed: #00264b;
+      --secondary-fixed: #e3ebf5;
+      --outline: #dadce0;
+      --outline-var: #c4c7c5;
+
+      /* Ambient background wash — soft colorful blooms behind the floating
+         chrome, fading into the neutral surface so the paper stays legible */
+      --app-bg-gradient:
+        radial-gradient(circle at 6% 6%, rgba(120, 119, 255, 0.14), transparent 32%),
+        radial-gradient(circle at 94% 8%, rgba(255, 105, 135, 0.14), transparent 34%),
+        radial-gradient(circle at 92% 96%, rgba(255, 159, 67, 0.14), transparent 36%),
+        radial-gradient(circle at 6% 94%, rgba(0, 200, 180, 0.11), transparent 34%);
+
+      /* Elevation — flatter, single-layer shadows (Material, not glass) */
+      --shadow-xs: 0 1px 2px rgba(31, 31, 31, 0.08);
+      --shadow-sm: 0 1px 3px rgba(31, 31, 31, 0.10), 0 1px 2px rgba(31, 31, 31, 0.06);
+      --shadow-md: 0 4px 16px rgba(31, 31, 31, 0.10), 0 1px 3px rgba(31, 31, 31, 0.08);
+      --shadow-lg: 0 8px 28px rgba(31, 31, 31, 0.14), 0 2px 6px rgba(31, 31, 31, 0.08);
+
+      /* Radius scale */
+      --radius-xs: 6px;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      --radius-full: 999px;
+
+      /* Type scale — one consistent ramp for the whole app */
+      --fs-display: 1.875rem;   /* 30px – page title (h1) */
+      --fs-title-lg: 1.125rem;  /* 18px – modal/section headings */
+      --fs-title: 1rem;         /* 16px – event date */
+      --fs-body: 0.8125rem;     /* 13px – event description, inputs */
+      --fs-label: 0.75rem;      /* 12px – buttons, dropdowns, subtitle */
+      --fs-caption: 0.6875rem;  /* 11px – time stamps, hints */
+      --fs-micro: 0.625rem;     /* 10px – uppercase section labels */
+
+      /* ── Font family tokens ──
+         --font-ui is the app's own chrome font (top bar, sidebar, buttons,
+         modal) — it never changes. --font-body / --font-heading are the
+         user-selectable fonts for the TIMELINE DOCUMENT content only (date/
+         time/description/title), picked from the sidebar's font pickers. */
+      --font-ui: 'IBM Plex Sans Thai', 'Sarabun', sans-serif;
+      --font-body: 'IBM Plex Sans Thai', 'Sarabun', sans-serif;
+      --font-heading: 'IBM Plex Sans Thai', 'Manrope', 'Sarabun', sans-serif;
     }
 
     html {
-      font-size: calc(16px + 2pt);
+      font-size: 16px;
     }
 
     * {
@@ -57,8 +97,10 @@
     body.space-pan.panning * { cursor: grabbing !important; }
 
     body {
-      font-family: var(--font-body);
-      background: #dce1e8;
+      font-family: var(--font-ui);
+      font-size: var(--fs-body);
+      background: var(--app-bg-gradient), var(--surface-mid);
+      background-attachment: fixed;
       overflow: hidden;
       height: 100dvh;
     }
@@ -66,13 +108,13 @@
     /* ── Canvas viewport: the scrollable stage that holds the paper ── */
     #canvas-viewport {
       position: fixed;
-      top: 52px;
+      top: 80px;
       left: 0;
       right: 0;
       bottom: 0;
       overflow: auto;
-      background: #dce1e8;
-      background-image: linear-gradient(160deg, rgba(77, 85, 106, 0.09) 0%, rgba(101, 109, 132, 0.02) 100%);
+      background: var(--app-bg-gradient), var(--surface-mid);
+      background-attachment: fixed;
       transition: left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
@@ -99,38 +141,38 @@
       justify-content: center;
       gap: 18px;
       min-height: 280px;
-      border-radius: 24px;
+      border-radius: var(--radius-xl);
       background: var(--surface-white);
       margin: 0;
       max-width: 640px;
       padding: 52px 40px;
-      box-shadow: var(--shadow-md);
+      box-shadow: var(--shadow-sm);
       cursor: pointer;
-      transition: box-shadow 0.25s, background 0.25s;
-      border: none;
+      transition: box-shadow 0.25s, background 0.25s, border-color 0.25s;
+      border: 1px solid var(--outline);
     }
 
     #upload-area.dragover {
       background: var(--primary-fixed);
-      box-shadow: 0 12px 48px rgba(77, 85, 106, 0.14);
+      border-color: var(--primary);
+      box-shadow: var(--shadow-md);
     }
 
     #upload-area i {
-      font-size: 2.6rem;
+      font-size: 2.4rem;
       color: var(--primary);
-      opacity: 0.65;
     }
 
     #upload-area h2 {
-      font-family: var(--font-heading);
-      font-size: 1.15rem;
+      font-family: var(--font-ui);
+      font-size: var(--fs-title-lg);
       color: var(--on-surface);
       font-weight: 700;
       letter-spacing: -0.2px;
     }
 
     #upload-area p {
-      font-size: 0.72rem;
+      font-size: var(--fs-label);
       color: var(--on-surface-var);
       text-align: center;
       line-height: 1.75;
@@ -141,18 +183,19 @@
       background: var(--primary);
       color: #fff;
       border: none;
-      border-radius: 10px;
-      font-size: 0.82rem;
+      border-radius: var(--radius-full);
+      font-size: var(--fs-label);
       font-weight: 600;
       cursor: pointer;
-      font-family: var(--font-body);
-      transition: filter 0.15s, transform 0.1s;
+      font-family: var(--font-ui);
+      transition: filter 0.15s, transform 0.1s, box-shadow 0.15s;
       letter-spacing: 0.1px;
+      box-shadow: var(--shadow-xs);
     }
 
     #upload-area .btn-upload:hover {
-      filter: brightness(1.15);
-      transform: translateY(-1px);
+      filter: brightness(1.1);
+      box-shadow: var(--shadow-sm);
     }
 
     #upload-area .btn-upload:active {
@@ -168,14 +211,14 @@
 
     .btn-demo {
       padding: 8px 20px;
-      background: var(--surface-high);
+      background: var(--surface-mid);
       color: var(--on-surface-var);
       border: none;
-      border-radius: 8px;
-      font-size: 0.72rem;
+      border-radius: var(--radius-full);
+      font-size: var(--fs-label);
       font-weight: 600;
       cursor: pointer;
-      font-family: var(--font-body);
+      font-family: var(--font-ui);
       transition: background 0.15s, color 0.15s, transform 0.1s;
     }
 
@@ -201,7 +244,7 @@
 
     .page-title h1 {
       font-family: var(--font-heading);
-      font-size: 1.85rem;
+      font-size: 1.875rem;
       font-weight: 800;
       color: var(--on-surface);
       letter-spacing: -0.5px;
@@ -209,14 +252,15 @@
     }
 
     .page-title p {
-      font-size: 0.82rem;
+      font-family: var(--font-body);
+      font-size: 0.875rem;
       color: var(--on-surface-var);
       margin-top: 6px;
       line-height: 1.6;
     }
 
     .page-title p.sub2 {
-      font-size: 0.73rem;
+      font-size: 0.75rem;
       color: var(--on-surface-var);
       opacity: 0.6;
       margin-top: 3px;
@@ -226,6 +270,7 @@
     .tl-section {
       display: grid;
       grid-template-rows: minmax(160px, auto) 24px minmax(160px, auto);
+      justify-content: center;
       width: 100%;
       margin-bottom: 20px;
     }
@@ -310,7 +355,16 @@
       justify-content: center;
       flex-shrink: 0;
       cursor: pointer;
-      transition: transform 0.2s, filter 0.2s;
+      /* standalone `scale` property — composes independently of any
+         `transform: rotate()` used by pin/diamond styles, so user-adjustable
+         icon size works uniformly across every visual style */
+      scale: var(--ev-icon-scale, 1);
+      /* scale is visual-only and doesn't reserve layout space, so above
+         100% the enlarged circle would overlap the date/stem next to it —
+         grow real margin alongside it to keep them clear */
+      margin-top: calc((var(--ev-icon-scale, 1) - 1) * 26px);
+      margin-bottom: calc((var(--ev-icon-scale, 1) - 1) * 26px);
+      transition: transform 0.2s, filter 0.2s, scale 0.15s, margin 0.15s;
     }
 
     .ev-circle:hover {
@@ -334,8 +388,8 @@
       position: fixed;
       z-index: 500;
       background: var(--surface-white);
-      border-radius: 18px;
-      box-shadow: var(--shadow-lg), 0 2px 8px rgba(25, 28, 30, 0.06);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
       padding: 12px;
       width: 284px;
       max-height: 340px;
@@ -356,28 +410,28 @@
 
     #icon-picker .ip-header input {
       flex: 1;
-      padding: 7px 12px;
+      padding: 8px 12px;
       border: none;
-      background: var(--surface-high);
-      border-radius: 8px;
-      font-size: 0.65rem;
-      font-family: var(--font-body);
+      background: var(--surface-mid);
+      border-radius: var(--radius-sm);
+      font-size: var(--fs-label);
+      font-family: var(--font-ui);
       outline: none;
       color: var(--on-surface);
       transition: background 0.15s, box-shadow 0.15s;
     }
 
     #icon-picker .ip-header input:focus {
-      background: var(--primary-fixed);
-      box-shadow: 0 0 0 2px rgba(77, 85, 106, 0.18);
+      background: var(--surface-white);
+      box-shadow: 0 0 0 2px var(--primary);
     }
 
     #icon-picker .ip-close {
-      width: 26px;
-      height: 26px;
+      width: 28px;
+      height: 28px;
       border: none;
       border-radius: 50%;
-      background: var(--surface-high);
+      background: var(--surface-mid);
       color: var(--on-surface-var);
       font-size: 0.75rem;
       cursor: pointer;
@@ -388,7 +442,7 @@
     }
 
     #icon-picker .ip-close:hover {
-      background: var(--surface-highest);
+      background: var(--surface-high);
     }
 
     #icon-picker .ip-grid {
@@ -401,7 +455,7 @@
       width: 40px;
       height: 40px;
       border: none;
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       background: var(--surface-low);
       display: flex;
       align-items: center;
@@ -424,12 +478,12 @@
 
     #icon-picker .ip-cat {
       grid-column: 1 / -1;
-      font-family: var(--font-heading);
-      font-size: 0.5rem;
+      font-family: var(--font-ui);
+      font-size: var(--fs-micro);
       color: var(--on-surface-var);
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.9px;
+      letter-spacing: 0.6px;
       padding: 8px 2px 3px;
     }
 
@@ -451,7 +505,7 @@
 
     .ev-date {
       font-family: var(--font-heading);
-      font-size: 0.9rem;
+      font-size: 1rem;
       font-weight: 700;
       text-align: center;
       line-height: 1.3;
@@ -460,7 +514,7 @@
 
     .ev-time {
       font-family: var(--font-heading);
-      font-size: 0.72rem;
+      font-size: 0.6875rem;
       font-weight: 500;
       text-align: center;
       line-height: 1.2;
@@ -472,7 +526,8 @@
     .ev-time:empty { display: none; }
 
     .ev-desc {
-      font-size: 0.75rem;
+      font-family: var(--font-body);
+      font-size: 0.8125rem;
       color: var(--on-surface-var);
       text-align: center;
       line-height: 1.65;
@@ -589,22 +644,22 @@
       white-space: nowrap;
     }
 
-    /* ── Top Bar ── */
+    /* ── Top Bar: floating capsule toolbar ── */
     #top-bar {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 52px;
+      top: 12px;
+      left: 16px;
+      right: 16px;
+      height: 56px;
       z-index: 300;
-      background: rgba(247, 249, 251, 0.92);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      box-shadow: 0 1px 0 rgba(195, 198, 215, 0.5), 0 2px 16px rgba(25, 28, 30, 0.05);
+      background: var(--surface-white);
+      border: 1px solid var(--outline);
+      border-radius: var(--radius-full);
+      box-shadow: var(--shadow-md);
       display: none;
       align-items: center;
-      gap: 6px;
-      padding: 0 16px;
+      gap: 4px;
+      padding: 0 20px;
     }
 
     #top-bar.visible {
@@ -612,21 +667,20 @@
     }
 
     .tb-brand {
-      font-family: var(--font-heading);
-      font-size: 0.82rem;
-      font-weight: 800;
-      color: var(--primary);
+      font-family: var(--font-ui);
+      font-size: var(--fs-title);
+      font-weight: 700;
+      color: var(--on-surface);
       letter-spacing: -0.2px;
-      margin-right: 4px;
+      margin-right: 6px;
       white-space: nowrap;
     }
 
     .tb-sep {
       width: 1px;
-      height: 20px;
+      height: 24px;
       background: var(--outline);
-      opacity: 0.5;
-      margin: 0 4px;
+      margin: 0 6px;
       flex-shrink: 0;
     }
 
@@ -634,14 +688,14 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 5px;
-      height: 32px;
-      padding: 0 10px;
+      gap: 6px;
+      height: 36px;
+      padding: 0 12px;
       border: none;
-      border-radius: 8px;
-      font-family: var(--font-body);
-      font-size: 0.65rem;
-      font-weight: 600;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-ui);
+      font-size: var(--fs-label);
+      font-weight: 500;
       cursor: pointer;
       background: transparent;
       color: var(--on-surface-var);
@@ -651,12 +705,12 @@
     }
 
     .tb-btn i {
-      font-size: 0.75rem;
+      font-size: 0.85rem;
       pointer-events: none;
     }
 
     .tb-btn:hover {
-      background: var(--surface-high);
+      background: var(--surface-mid);
       color: var(--on-surface);
     }
 
@@ -665,7 +719,7 @@
     }
 
     .tb-btn.tb-icon-only {
-      width: 32px;
+      width: 36px;
       padding: 0;
     }
 
@@ -675,18 +729,18 @@
     }
 
     .tb-btn:disabled {
-      opacity: 0.35;
+      opacity: 0.38;
       cursor: default;
       pointer-events: none;
     }
 
     .tb-btn.tb-pdf {
-      background: #fef3c7;
-      color: #92400e;
+      background: #fef7e0;
+      color: #9a6700;
     }
 
     .tb-btn.tb-pdf:hover {
-      background: #fde68a;
+      background: #fdeeb4;
     }
 
     .tb-btn.tb-save {
@@ -695,20 +749,38 @@
     }
 
     .tb-btn.tb-save:hover {
-      background: #c8d5fb;
+      background: #c2dbfe;
     }
 
     .tb-btn.tb-reset {
-      background: #fff1f2;
-      color: #be123c;
+      background: #fce8e6;
+      color: #c5221f;
     }
 
     .tb-btn.tb-reset:hover {
-      background: #fee2e2;
+      background: #fad2ce;
     }
 
     .tb-spacer {
       flex: 1;
+    }
+
+    /* ── Chip grouping: bundles a stepper control into one tonal pill so it
+       reads as a single control instead of loose icon buttons ── */
+    .tb-chip {
+      background: var(--surface-mid);
+      border-radius: var(--radius-full);
+      padding: 3px;
+      margin: 0 3px;
+    }
+
+    .tb-chip-btn {
+      background: transparent !important;
+    }
+
+    .tb-chip-btn:hover {
+      background: var(--surface-white) !important;
+      box-shadow: var(--shadow-xs);
     }
 
     /* ── Spacing control (ความกว้างช่องเส้นเวลา) ── */
@@ -722,15 +794,15 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      min-width: 30px;
+      min-width: 32px;
     }
     .tb-spacing-label {
-      font-size: 0.58rem;
-      opacity: 0.65;
+      font-size: var(--fs-micro);
+      opacity: 0.7;
       font-weight: 500;
     }
     .tb-spacing-icon {
-      font-size: 0.75rem;
+      font-size: 0.8rem;
       line-height: 1;
     }
 
@@ -747,45 +819,50 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-width: 30px;
+      min-width: 32px;
       line-height: 1.1;
       pointer-events: none;
       user-select: none;
     }
 
     .tb-rows-num {
-      font-family: var(--font-heading);
-      font-size: 0.9rem;
+      font-family: var(--font-ui);
+      font-size: 0.95rem;
       font-weight: 700;
       color: var(--on-surface);
     }
 
     .tb-rows-label {
-      font-size: 0.58rem;
+      font-size: var(--fs-micro);
       font-weight: 500;
       color: var(--on-surface-var);
-      opacity: 0.65;
+      opacity: 0.7;
       letter-spacing: 0.03em;
     }
 
     /* Canvas size select in top bar */
     #canvas-size-select {
-      height: 30px;
-      padding: 0 8px;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.65rem;
-      font-family: var(--font-body);
+      height: 36px;
+      padding: 0 26px 0 10px;
+      border: 1px solid var(--outline);
+      border-radius: var(--radius-sm);
+      font-size: var(--fs-label);
+      font-family: var(--font-ui);
       color: var(--on-surface);
-      background: var(--surface-high);
+      background-color: var(--surface-white);
       cursor: pointer;
       outline: none;
-      transition: background 0.15s;
+      transition: border-color 0.15s, box-shadow 0.15s;
       flex-shrink: 0;
     }
 
+    #canvas-size-select:hover {
+      border-color: var(--outline-var);
+    }
+
     #canvas-size-select:focus {
-      background: var(--primary-fixed);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px var(--primary);
     }
 
     /* ── Floating toggle button (legacy, hidden) ── */
@@ -793,23 +870,23 @@
       display: none;
     }
 
-    /* ── Left Sidebar ── */
+    /* ── Left Sidebar (flat Google-app style, no glass/blur) ── */
     #ctrl-panel {
       position: fixed;
-      top: 52px;
-      left: 0;
-      bottom: 0;
+      top: 80px;
+      left: 16px;
+      bottom: 16px;
       width: 224px;
       z-index: 200;
-      background: rgba(242, 244, 246, 0.96);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      box-shadow: 2px 0 24px rgba(25, 28, 30, 0.07);
-      font-family: var(--font-body);
-      transform: translateX(-100%);
+      background: var(--surface-white);
+      border: 1px solid var(--outline);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      font-family: var(--font-ui);
+      transform: translateX(-120%);
       transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
       overflow-y: auto;
-      padding: 16px 14px 80px;
+      padding: 16px 14px 24px;
     }
 
     #ctrl-panel.open {
@@ -817,11 +894,11 @@
     }
 
     #ctrl-panel .cp-title {
-      font-family: var(--font-heading);
-      font-size: 0.55rem;
-      font-weight: 800;
-      color: var(--on-surface);
-      letter-spacing: 0.9px;
+      font-family: var(--font-ui);
+      font-size: var(--fs-micro);
+      font-weight: 700;
+      color: var(--on-surface-var);
+      letter-spacing: 0.6px;
       text-transform: uppercase;
       margin-bottom: 16px;
       display: flex;
@@ -830,19 +907,20 @@
     }
 
     #ctrl-panel .cp-title button {
-      background: var(--surface-high);
+      background: var(--surface-mid);
       border: none;
       color: var(--on-surface-var);
       font-size: 0.85rem;
       cursor: pointer;
-      padding: 4px 7px;
-      border-radius: 6px;
+      width: 24px;
+      height: 24px;
+      border-radius: var(--radius-full);
       line-height: 1;
       transition: background 0.15s, color 0.15s;
     }
 
     #ctrl-panel .cp-title button:hover {
-      background: var(--surface-highest);
+      background: var(--surface-high);
       color: var(--on-surface);
     }
 
@@ -850,7 +928,7 @@
       display: flex;
       flex-direction: column;
       padding: 10px 0;
-      gap: 6px;
+      gap: 7px;
       position: relative;
     }
 
@@ -858,36 +936,97 @@
       content: '';
       position: absolute;
       top: 0;
-      left: 8px;
-      right: 8px;
+      left: 0;
+      right: 0;
       height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(195, 198, 215, 0.5), transparent);
+      background: var(--outline);
     }
 
     .ctrl-label {
-      font-family: var(--font-heading);
-      font-size: 0.5rem;
+      font-family: var(--font-ui);
+      font-size: var(--fs-micro);
       color: var(--on-surface-var);
-      letter-spacing: 0.9px;
+      letter-spacing: 0.6px;
       text-transform: uppercase;
       font-weight: 700;
       white-space: nowrap;
     }
 
+    .ctrl-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    /* ── Small on/off toggle switch (show/hide a text element) ── */
+    .tgl-switch {
+      position: relative;
+      display: inline-block;
+      width: 30px;
+      height: 18px;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    .tgl-switch input {
+      position: absolute;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      cursor: pointer;
+    }
+
+    .tgl-track {
+      position: absolute;
+      inset: 0;
+      background: var(--surface-high);
+      border-radius: var(--radius-full);
+      transition: background 0.15s;
+    }
+
+    .tgl-track::before {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--surface-white);
+      box-shadow: var(--shadow-xs);
+      transition: transform 0.15s;
+    }
+
+    .tgl-switch input:checked + .tgl-track {
+      background: var(--primary);
+    }
+
+    .tgl-switch input:checked + .tgl-track::before {
+      transform: translateX(12px);
+    }
+
+    .ctrl-group.tgl-off .ctrl-row,
+    .ctrl-group.tgl-off input[type="range"] {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
     .ctrl-row {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
     }
 
     #ctrl-panel button.ctrl-btn {
-      width: 26px;
-      height: 26px;
+      width: 28px;
+      height: 28px;
       border: none;
-      border-radius: 8px;
-      background: var(--surface-high);
+      border-radius: var(--radius-sm);
+      background: var(--surface-mid);
       color: var(--primary);
-      font-size: 0.82rem;
+      font-size: 0.85rem;
       font-weight: 700;
       cursor: pointer;
       display: flex;
@@ -902,8 +1041,8 @@
     }
 
     .size-val {
-      font-family: var(--font-heading);
-      font-size: 0.62rem;
+      font-family: var(--font-ui);
+      font-size: var(--fs-caption);
       font-weight: 600;
       color: var(--primary);
       min-width: 32px;
@@ -911,40 +1050,104 @@
     }
 
     #ctrl-panel input[type="color"] {
-      width: 22px;
-      height: 22px;
-      border: none;
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--surface-white);
       border-radius: 50%;
       padding: 0;
       cursor: pointer;
       flex-shrink: 0;
       overflow: hidden;
       background: none;
-      box-shadow: 0 0 0 2px var(--surface-highest);
+      box-shadow: 0 0 0 1px var(--outline);
+      transition: box-shadow 0.15s;
     }
 
+    #ctrl-panel input[type="color"]:hover {
+      box-shadow: 0 0 0 1px var(--primary);
+    }
+
+    /* ── Custom slider track + thumb (native range inputs render as a thin
+       flat line — this is what reads as an unstyled/old form control) ── */
     #ctrl-panel input[type="range"] {
       width: 100%;
       accent-color: var(--primary);
       cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      background: transparent;
+      height: 16px;
+    }
+
+    #ctrl-panel input[type="range"]::-webkit-slider-runnable-track {
+      height: 6px;
+      border-radius: var(--radius-full);
+      background: var(--surface-high);
+    }
+
+    #ctrl-panel input[type="range"]::-moz-range-track {
+      height: 6px;
+      border-radius: var(--radius-full);
+      background: var(--surface-high);
+    }
+
+    #ctrl-panel input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      margin-top: -5px;
+      border-radius: 50%;
+      background: var(--primary);
+      border: 2px solid var(--surface-white);
+      box-shadow: 0 0 0 1px var(--primary), var(--shadow-xs);
+      cursor: pointer;
+    }
+
+    #ctrl-panel input[type="range"]::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary);
+      border: 2px solid var(--surface-white);
+      box-shadow: 0 0 0 1px var(--primary), var(--shadow-xs);
+      cursor: pointer;
+    }
+
+    /* Custom chevron replaces the native OS select arrow on every dropdown
+       in the app (sidebar + top bar) — a plain browser arrow is the single
+       biggest tell of an unstyled/dated form control. */
+    .theme-select,
+    #canvas-size-select {
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23444746' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      background-size: 15px;
     }
 
     .theme-select {
       flex: 1;
-      padding: 5px 8px;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.65rem;
-      font-family: var(--font-body);
+      padding: 7px 26px 7px 10px;
+      border: 1px solid var(--outline);
+      border-radius: var(--radius-sm);
+      font-size: var(--fs-label);
+      font-family: var(--font-ui);
       color: var(--on-surface);
       outline: none;
-      background: var(--surface-high);
+      background-color: var(--surface-white);
       cursor: pointer;
-      transition: background 0.15s;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .theme-select:hover {
+      border-color: var(--outline-var);
     }
 
     .theme-select:focus {
-      background: var(--primary-fixed);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px var(--primary);
     }
 
     /* ── Action buttons inside panel ── */
@@ -957,13 +1160,13 @@
 
     .cp-actions button {
       width: 100%;
-      padding: 9px 12px;
+      padding: 10px 12px;
       border: none;
-      border-radius: 10px;
-      font-size: 0.65rem;
+      border-radius: var(--radius-full);
+      font-size: var(--fs-label);
       font-weight: 600;
       cursor: pointer;
-      font-family: var(--font-body);
+      font-family: var(--font-ui);
       transition: filter 0.15s, transform 0.1s;
       display: flex;
       align-items: center;
@@ -986,25 +1189,25 @@
     }
 
     .cp-actions .btn-pdf {
-      background: #fef3c7;
-      color: #92400e;
+      background: #fef7e0;
+      color: #9a6700;
     }
 
     .cp-actions .btn-save i,
     .cp-actions .btn-pdf i,
     .cp-actions .btn-load i,
     .cp-actions .btn-reload i {
-      font-size: 0.65rem;
+      font-size: 0.7rem;
     }
 
     .cp-actions .btn-load {
-      background: #f0fdf4;
-      color: #166534;
+      background: #e6f4ea;
+      color: #1e7e34;
     }
 
     .cp-actions .btn-reload {
-      background: #fff1f2;
-      color: #be123c;
+      background: #fce8e6;
+      color: #c5221f;
     }
 
     /* ── Editable title + subtitle ── */
@@ -1067,7 +1270,7 @@
       background-color: #ffffff;
       box-shadow: 0 8px 40px rgba(25, 28, 30, 0.14), 0 2px 8px rgba(25, 28, 30, 0.08);
       border-radius: 12px;
-      padding: 56px 48px;
+      padding: 48px;
       width: max-content;
       min-width: 800px;
       min-height: 400px;
@@ -1156,10 +1359,10 @@
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
       color: #fff;
-      border-radius: 20px;
-      padding: 5px 14px;
-      font-family: var(--font-heading);
-      font-size: 0.65rem;
+      border-radius: var(--radius-full);
+      padding: 6px 14px;
+      font-family: var(--font-ui);
+      font-size: var(--fs-label);
       font-weight: 600;
       letter-spacing: 0.4px;
       pointer-events: none;
@@ -1182,7 +1385,7 @@
       background: rgba(25, 28, 30, 0.7);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
-      border-radius: 20px;
+      border-radius: var(--radius-full);
       padding: 4px;
       opacity: 0;
       transition: opacity 0.25s;
@@ -1262,7 +1465,7 @@
 
     .modal-card {
       background: var(--surface-white);
-      border-radius: 22px;
+      border-radius: var(--radius-xl);
       box-shadow: var(--shadow-lg);
       padding: 28px 28px 22px;
       width: 370px;
@@ -1270,8 +1473,8 @@
     }
 
     .modal-card h3 {
-      font-family: var(--font-heading);
-      font-size: 1rem;
+      font-family: var(--font-ui);
+      font-size: var(--fs-title-lg);
       font-weight: 700;
       color: var(--on-surface);
       margin-bottom: 20px;
@@ -1285,22 +1488,22 @@
     }
 
     .modal-field label {
-      font-family: var(--font-heading);
-      font-size: 0.5rem;
+      font-family: var(--font-ui);
+      font-size: var(--fs-micro);
       font-weight: 700;
       color: var(--on-surface-var);
       text-transform: uppercase;
-      letter-spacing: 0.9px;
+      letter-spacing: 0.6px;
     }
 
     .modal-field input,
     .modal-field textarea {
-      background: var(--surface-high);
-      border: none;
-      border-radius: 10px;
-      padding: 9px 12px;
-      font-size: 0.82rem;
-      font-family: var(--font-body);
+      background: var(--surface-mid);
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      font-size: var(--fs-body);
+      font-family: var(--font-ui);
       color: var(--on-surface);
       outline: none;
       resize: none;
@@ -1309,8 +1512,8 @@
 
     .modal-field input:focus,
     .modal-field textarea:focus {
-      background: var(--primary-fixed);
-      box-shadow: 0 0 0 2px rgba(77, 85, 106, 0.18);
+      background: var(--surface-white);
+      box-shadow: 0 0 0 2px var(--primary);
     }
 
     .modal-field textarea {
@@ -1319,9 +1522,9 @@
     }
 
     .modal-hint {
-      font-size: 0.6rem;
+      font-size: var(--fs-caption);
       color: var(--on-surface-var);
-      opacity: 0.6;
+      opacity: 0.7;
       margin-top: 8px;
     }
 
@@ -1333,32 +1536,32 @@
     }
 
     .modal-btn-cancel {
-      padding: 8px 18px;
-      background: var(--surface-high);
-      color: var(--on-surface-var);
+      padding: 9px 18px;
+      background: transparent;
+      color: var(--primary);
       border: none;
-      border-radius: 8px;
-      font-size: 0.72rem;
+      border-radius: var(--radius-full);
+      font-size: var(--fs-label);
       font-weight: 600;
       cursor: pointer;
-      font-family: var(--font-body);
+      font-family: var(--font-ui);
       transition: background 0.15s;
     }
 
     .modal-btn-cancel:hover {
-      background: var(--surface-highest);
+      background: var(--primary-fixed);
     }
 
     .modal-btn-confirm {
-      padding: 8px 20px;
+      padding: 9px 20px;
       background: var(--primary);
       color: #fff;
       border: none;
-      border-radius: 8px;
-      font-size: 0.72rem;
+      border-radius: var(--radius-full);
+      font-size: var(--fs-label);
       font-weight: 600;
       cursor: pointer;
-      font-family: var(--font-body);
+      font-family: var(--font-ui);
       transition: filter 0.15s, transform 0.1s;
     }
 
@@ -1402,7 +1605,7 @@
 
     .ev-drag-handle:hover {
       opacity: 0.9;
-      background: rgba(77, 85, 106, 0.08);
+      background: var(--primary-fixed);
     }
 
     .ev-drag-handle:active {
@@ -1411,9 +1614,9 @@
 
     .ev-cell-top.drag-over,
     .ev-cell-bot.drag-over {
-      background: rgba(218, 226, 253, 0.45);
-      border-radius: 8px;
-      outline: 2px dashed rgba(77, 85, 106, 0.5);
+      background: var(--primary-fixed);
+      border-radius: var(--radius-sm);
+      outline: 2px dashed var(--primary);
       outline-offset: 3px;
     }
 
@@ -1766,6 +1969,134 @@
       height: 6px;
     }
 
+    /* ── GRADIENT: smooth color-blend line with clean flat circles.
+       --gradient-bar is set by applyGradientTone() based on the chosen tone. ── */
+    body[data-vstyle="gradient"] .tl-bar-bg {
+      height: 8px;
+      background: var(--gradient-bar, linear-gradient(90deg, #14b8a6, #6366f1, #a855f7, #ec4899)) !important;
+    }
+
+    body[data-vstyle="gradient"] .tl-bar-seg {
+      background: transparent !important;
+    }
+
+    body[data-vstyle="gradient"] .ev-circle {
+      border: 3px solid var(--surface-white);
+      box-shadow: 0 3px 10px rgba(25, 28, 30, 0.2);
+    }
+
+    body[data-vstyle="gradient"] .ev-dot {
+      border-width: 3px;
+    }
+
+    body[data-vstyle="gradient"] .ev-date {
+      font-weight: 800 !important;
+    }
+
+    /* ── PIN: map-pin / teardrop markers pointing at the road,
+       with an arrowhead at the timeline's final destination ── */
+    body[data-vstyle="pin"] .ev-circle {
+      border-radius: 50% 50% 50% 0;
+      width: 44px;
+      height: 44px;
+      box-shadow: 0 4px 10px rgba(25, 28, 30, 0.25);
+    }
+
+    body[data-vstyle="pin"] .ev-cell-top .ev-circle {
+      transform: rotate(-45deg);
+    }
+
+    body[data-vstyle="pin"] .ev-cell-bot .ev-circle {
+      transform: rotate(135deg);
+    }
+
+    body[data-vstyle="pin"] .ev-cell-top .ev-circle:hover {
+      transform: rotate(-45deg) scale(1.1);
+    }
+
+    body[data-vstyle="pin"] .ev-cell-bot .ev-circle:hover {
+      transform: rotate(135deg) scale(1.1);
+    }
+
+    body[data-vstyle="pin"] .ev-circle i {
+      display: block;
+    }
+
+    body[data-vstyle="pin"] .ev-cell-top .ev-circle i {
+      transform: rotate(45deg);
+    }
+
+    body[data-vstyle="pin"] .ev-cell-bot .ev-circle i {
+      transform: rotate(-135deg);
+    }
+
+    body[data-vstyle="pin"] .tl-bar-bg {
+      height: 14px;
+    }
+
+    body[data-vstyle="pin"] .ev-dot {
+      top: calc(50% - 7px);
+    }
+
+    body[data-vstyle="pin"] .tl-section:last-of-type .tl-bar-seg:last-child {
+      clip-path: polygon(0 0, 65% 0, 100% 50%, 65% 100%, 0 100%);
+    }
+
+    /* ── CHEVRON: connected arrow-ribbon bar, icons riding the peaks ── */
+    body[data-vstyle="chevron"] .tl-bar-bg {
+      height: 26px;
+      gap: 3px;
+    }
+
+    body[data-vstyle="chevron"] .tl-bar-seg {
+      clip-path: polygon(0 0, 82% 0, 100% 50%, 82% 100%, 0 100%, 14% 50%);
+    }
+
+    body[data-vstyle="chevron"] .tl-bar-seg:first-child {
+      clip-path: polygon(0 0, 82% 0, 100% 50%, 82% 100%, 0 100%);
+    }
+
+    body[data-vstyle="chevron"] .tl-section:last-of-type .tl-bar-seg:last-child {
+      clip-path: polygon(0 0, 65% 0, 100% 50%, 65% 100%, 0 100%, 14% 50%);
+    }
+
+    body[data-vstyle="chevron"] .ev-dot {
+      width: 12px;
+      height: 12px;
+      border-width: 2.5px;
+    }
+
+    body[data-vstyle="chevron"] .ev-date {
+      font-weight: 800 !important;
+    }
+
+    /* ── STAIRCASE: ascending diagonal steps (per-column offset applied
+       via JS — see applyStaircaseLayout()) ── */
+    body[data-vstyle="staircase"] .tl-section {
+      margin-bottom: 44px;
+    }
+
+    body[data-vstyle="staircase"] .tl-bar-seg {
+      border-radius: 4px;
+      margin-right: 3px;
+      transition: transform 0.25s;
+    }
+
+    body[data-vstyle="staircase"] .tl-bar-bg {
+      gap: 3px;
+      overflow: visible;
+    }
+
+    body[data-vstyle="staircase"] .tl-dot-cell,
+    body[data-vstyle="staircase"] .ev-cell-top,
+    body[data-vstyle="staircase"] .ev-cell-bot {
+      transition: transform 0.25s;
+    }
+
+    body[data-vstyle="staircase"] .ev-stem {
+      display: none;
+    }
+
     /* ── Recent icons section in picker ── */
     #ip-recent-row {
       display: grid;
@@ -1890,32 +2221,39 @@
       <i class="fa-solid fa-plus"></i> เพิ่ม Event
     </button>
     <div class="tb-sep" id="rows-sep" style="display:none;"></div>
-    <div class="tb-rows-ctrl" id="rows-ctrl" style="display:none;" title="จำนวนแถวเส้นเวลา">
-      <button class="tb-btn tb-icon-only" id="rows-dn" title="ลดแถว">−</button>
+    <div class="tb-rows-ctrl tb-chip" id="rows-ctrl" style="display:none;" title="จำนวนแถวเส้นเวลา">
+      <button class="tb-btn tb-icon-only tb-chip-btn" id="rows-dn" title="ลดแถว"><i class="fa-solid fa-minus"></i></button>
       <div class="tb-rows-display">
         <span class="tb-rows-num" id="rows-val">1</span>
         <span class="tb-rows-label">แถว</span>
       </div>
-      <button class="tb-btn tb-icon-only" id="rows-up" title="เพิ่มแถว">+</button>
+      <button class="tb-btn tb-icon-only tb-chip-btn" id="rows-up" title="เพิ่มแถว"><i class="fa-solid fa-plus"></i></button>
     </div>
-    <div class="tb-sep" id="spacing-sep" style="display:none;"></div>
-    <div class="tb-spacing-ctrl" id="spacing-ctrl" style="display:none;" title="ความกว้างช่องระหว่าง Event">
-      <button class="tb-btn tb-icon-only" id="spacing-dn" title="ย่อเส้นเวลา">◀</button>
+    <div class="tb-spacing-ctrl tb-chip" id="spacing-ctrl" style="display:none;" title="ความกว้างช่องระหว่าง Event">
+      <button class="tb-btn tb-icon-only tb-chip-btn" id="spacing-dn" title="ย่อเส้นเวลา"><i class="fa-solid fa-angle-left"></i></button>
       <div class="tb-spacing-display">
         <i class="fa-solid fa-arrows-left-right tb-spacing-icon"></i>
         <span class="tb-spacing-label">เส้น</span>
       </div>
-      <button class="tb-btn tb-icon-only" id="spacing-up" title="ยืดเส้นเวลา">▶</button>
+      <button class="tb-btn tb-icon-only tb-chip-btn" id="spacing-up" title="ยืดเส้นเวลา"><i class="fa-solid fa-angle-right"></i></button>
     </div>
-    <div class="tb-sep" id="barh-sep" style="display:none;"></div>
-    <div class="tb-spacing-ctrl" id="barh-ctrl" style="display:none;" title="ความหนาของเส้น Timeline">
-      <button class="tb-btn tb-icon-only" id="barh-dn" title="บางลง">−</button>
+    <div class="tb-spacing-ctrl tb-chip" id="barh-ctrl" style="display:none;" title="ความหนาของเส้น Timeline">
+      <button class="tb-btn tb-icon-only tb-chip-btn" id="barh-dn" title="บางลง"><i class="fa-solid fa-minus"></i></button>
       <div class="tb-spacing-display">
         <i class="fa-solid fa-grip-lines tb-spacing-icon"></i>
         <span class="tb-spacing-label">หนา</span>
       </div>
-      <button class="tb-btn tb-icon-only" id="barh-up" title="หนาขึ้น">+</button>
+      <button class="tb-btn tb-icon-only tb-chip-btn" id="barh-up" title="หนาขึ้น"><i class="fa-solid fa-plus"></i></button>
     </div>
+    <div class="tb-spacing-ctrl tb-chip" id="pad-ctrl" style="display:none;" title="ระยะขอบกระดาษรอบ Content">
+      <button class="tb-btn tb-icon-only tb-chip-btn" id="pad-dn" title="ขอบแคบลง"><i class="fa-solid fa-minus"></i></button>
+      <div class="tb-spacing-display">
+        <i class="fa-solid fa-border-style tb-spacing-icon"></i>
+        <span class="tb-spacing-label">ขอบ</span>
+      </div>
+      <button class="tb-btn tb-icon-only tb-chip-btn" id="pad-up" title="ขอบกว้างขึ้น"><i class="fa-solid fa-plus"></i></button>
+    </div>
+    <div class="tb-sep" id="barh-sep" style="display:none;"></div>
     <button class="tb-btn tb-icon-only" id="btn-fullscreen" title="แสดงเต็มจอ">
       <i class="fa-solid fa-expand"></i>
     </button>
@@ -2069,6 +2407,79 @@
           <option value="glass">กระจก (Glass)</option>
           <option value="pill">พิล (Pill)</option>
           <option value="compact">คอมแพค (Compact)</option>
+          <option value="gradient">ไล่เฉดสี (Gradient)</option>
+          <option value="pin">หมุดปักแผนที่ (Pin)</option>
+          <option value="chevron">ลูกศรต่อเนื่อง (Chevron)</option>
+          <option value="staircase">บันไดขั้น (Staircase)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="ctrl-group" id="gradient-tone-group" style="display:none;">
+      <span class="ctrl-label">โทนสีไล่เฉด</span>
+      <div class="ctrl-row">
+        <select id="gradient-tone-select" class="theme-select">
+          <option value="teal-purple">ทะเล-ม่วง (Teal-Purple)</option>
+          <option value="ocean">มหาสมุทร (Ocean)</option>
+          <option value="sunset">อัสดง (Sunset)</option>
+          <option value="forest">ป่าไม้ (Forest)</option>
+          <option value="berry">เบอร์รี่ (Berry)</option>
+          <option value="fire">ไฟ (Fire)</option>
+          <option value="navy-sky">กรมท่า-ฟ้า (Navy Sky)</option>
+          <option value="slate">เทาหิน (Slate)</option>
+          <option value="royal">ม่วงหลวง (Royal)</option>
+          <option value="candy">ลูกกวาด (Candy)</option>
+          <option value="emerald-gold">มรกต-ทอง (Emerald Gold)</option>
+          <option value="volcano">ภูเขาไฟ (Volcano)</option>
+          <option value="aurora">แสงเหนือ (Aurora)</option>
+          <option value="rosegold">โรสโกลด์ (Rose Gold)</option>
+          <option value="midnight">ราตรี (Midnight)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="ctrl-group" id="gradient-icon-group" style="display:none;">
+      <span class="ctrl-label">สีไอคอน</span>
+      <div class="ctrl-row">
+        <select id="gradient-icon-mode-select" class="theme-select">
+          <option value="gradient">ไล่ตามโทนสี</option>
+          <option value="single">สีเดียว</option>
+        </select>
+        <input type="color" id="gradient-icon-color" value="#00264b" title="เลือกสีไอคอน" style="display:none;">
+      </div>
+    </div>
+
+    <div class="ctrl-group">
+      <span class="ctrl-label">ฟอนต์หัวข้อ</span>
+      <div class="ctrl-row">
+        <select id="font-heading-select" class="theme-select">
+          <option value="IBM Plex Sans Thai">IBM Plex Sans Thai (ค่าเริ่มต้น)</option>
+          <option value="Sarabun">Sarabun</option>
+          <option value="Noto Sans Thai">Noto Sans Thai</option>
+          <option value="Kanit">Kanit</option>
+          <option value="Mitr">Mitr</option>
+          <option value="Prompt">Prompt</option>
+          <option value="K2D">K2D</option>
+          <option value="Chakra Petch">Chakra Petch</option>
+          <option value="Bai Jamjuree">Bai Jamjuree</option>
+          <option value="Athiti">Athiti</option>
+          <option value="Niramit">Niramit</option>
+          <option value="Anuphan">Anuphan</option>
+          <option value="Taviraj">Taviraj (Serif)</option>
+          <option value="Trirong">Trirong (Serif)</option>
+          <option value="Pridi">Pridi (Serif)</option>
+          <option value="Itim">Itim (ลายมือ)</option>
+          <option value="Sriracha">Sriracha (ลายมือ)</option>
+          <option value="Charmonman">Charmonman (ลายมือ)</option>
+          <option value="Chonburi">Chonburi (ดิสเพลย์)</option>
+          <option value="Manrope">Manrope</option>
+          <option value="Inter">Inter</option>
+          <option value="Poppins">Poppins</option>
+          <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
+          <option value="Outfit">Outfit</option>
+          <option value="Space Grotesk">Space Grotesk</option>
+          <option value="DM Sans">DM Sans</option>
+          <option value="Raleway">Raleway</option>
         </select>
       </div>
     </div>
@@ -2077,25 +2488,26 @@
       <span class="ctrl-label">ฟอนต์เนื้อหา</span>
       <div class="ctrl-row">
         <select id="font-body-select" class="theme-select">
-          <option value="Sarabun">Sarabun (ค่าเริ่มต้น)</option>
+          <option value="IBM Plex Sans Thai">IBM Plex Sans Thai (ค่าเริ่มต้น)</option>
+          <option value="Sarabun">Sarabun</option>
           <option value="Noto Sans Thai">Noto Sans Thai</option>
-          <option value="IBM Plex Sans Thai">IBM Plex Sans Thai</option>
           <option value="Kanit">Kanit</option>
           <option value="Mitr">Mitr</option>
           <option value="Prompt">Prompt</option>
           <option value="K2D">K2D</option>
-          <option value="Itim">Itim (ลายมือ)</option>
+          <option value="Chakra Petch">Chakra Petch</option>
+          <option value="Bai Jamjuree">Bai Jamjuree</option>
+          <option value="Athiti">Athiti</option>
+          <option value="Niramit">Niramit</option>
+          <option value="Anuphan">Anuphan</option>
+          <option value="Taviraj">Taviraj (Serif)</option>
           <option value="Trirong">Trirong (Serif)</option>
           <option value="Pridi">Pridi (Serif)</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="ctrl-group">
-      <span class="ctrl-label">ฟอนต์หัวข้อ</span>
-      <div class="ctrl-row">
-        <select id="font-heading-select" class="theme-select">
-          <option value="Manrope">Manrope (ค่าเริ่มต้น)</option>
+          <option value="Itim">Itim (ลายมือ)</option>
+          <option value="Sriracha">Sriracha (ลายมือ)</option>
+          <option value="Charmonman">Charmonman (ลายมือ)</option>
+          <option value="Chonburi">Chonburi (ดิสเพลย์)</option>
+          <option value="Manrope">Manrope</option>
           <option value="Inter">Inter</option>
           <option value="Poppins">Poppins</option>
           <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
@@ -2103,8 +2515,6 @@
           <option value="Space Grotesk">Space Grotesk</option>
           <option value="DM Sans">DM Sans</option>
           <option value="Raleway">Raleway</option>
-          <option value="Sarabun">Sarabun</option>
-          <option value="Kanit">Kanit</option>
         </select>
       </div>
     </div>
@@ -2130,7 +2540,7 @@
     <div class="ctrl-group">
       <span class="ctrl-label">สีกระดาษ</span>
       <div class="ctrl-row">
-        <span class="size-val" style="flex:1; text-align:left; font-size:0.65rem;">พื้นหลัง Canvas</span>
+        <span style="flex:1; text-align:left; font-size:var(--fs-label); font-weight:500; color:var(--on-surface-var); font-family:var(--font-ui);">พื้นหลัง Canvas</span>
         <input type="color" id="canvas-bg-clr" title="สีพื้นหลัง Canvas" value="#ffffff" />
       </div>
     </div>
@@ -2143,7 +2553,7 @@
         <button class="ctrl-btn" id="fs-up" title="ใหญ่ขึ้น">A+</button>
         <input type="color" id="desc-clr" title="สีข้อความ" />
       </div>
-      <input id="fs-slider" type="range" min="6" max="40" value="12" />
+      <input id="fs-slider" type="range" min="6" max="40" value="13" />
     </div>
 
     <div class="ctrl-group">
@@ -2164,29 +2574,41 @@
         <button class="ctrl-btn" id="h1-up" title="ใหญ่ขึ้น">A+</button>
         <input type="color" id="h1-clr" title="สีหัวข้อ" />
       </div>
-      <input id="h1-slider" type="range" min="8" max="72" value="32" />
+      <input id="h1-slider" type="range" min="8" max="72" value="30" />
     </div>
 
-    <div class="ctrl-group">
-      <span class="ctrl-label">หัวรอง</span>
+    <div class="ctrl-group" id="sub-group">
+      <div class="ctrl-label-row">
+        <span class="ctrl-label">หัวรอง</span>
+        <label class="tgl-switch" title="แสดง/ซ่อนหัวรอง">
+          <input type="checkbox" id="sub-toggle" checked>
+          <span class="tgl-track"></span>
+        </label>
+      </div>
       <div class="ctrl-row">
         <button class="ctrl-btn" id="sub-dn" title="เล็กลง">A&minus;</button>
         <span class="size-val" id="sub-val">&mdash;</span>
         <button class="ctrl-btn" id="sub-up" title="ใหญ่ขึ้น">A+</button>
         <input type="color" id="sub-clr" title="สีหัวรอง" />
       </div>
-      <input id="sub-slider" type="range" min="6" max="40" value="15" />
+      <input id="sub-slider" type="range" min="6" max="40" value="14" />
     </div>
 
-    <div class="ctrl-group">
-      <span class="ctrl-label">หัวรอง 2</span>
+    <div class="ctrl-group" id="sub2-group">
+      <div class="ctrl-label-row">
+        <span class="ctrl-label">หัวรอง 2</span>
+        <label class="tgl-switch" title="แสดง/ซ่อนหัวรอง 2">
+          <input type="checkbox" id="sub2-toggle" checked>
+          <span class="tgl-track"></span>
+        </label>
+      </div>
       <div class="ctrl-row">
         <button class="ctrl-btn" id="sub2-dn" title="เล็กลง">A&minus;</button>
         <span class="size-val" id="sub2-val">&mdash;</span>
         <button class="ctrl-btn" id="sub2-up" title="ใหญ่ขึ้น">A+</button>
         <input type="color" id="sub2-clr" title="สีหัวรอง 2" />
       </div>
-      <input id="sub2-slider" type="range" min="6" max="40" value="14" />
+      <input id="sub2-slider" type="range" min="6" max="40" value="12" />
     </div>
 
     <div class="ctrl-group">
@@ -2196,7 +2618,7 @@
         <span class="size-val" id="dt-val">&mdash;</span>
         <button class="ctrl-btn" id="dt-up" title="ใหญ่ขึ้น">A+</button>
       </div>
-      <input id="dt-slider" type="range" min="6" max="40" value="17" />
+      <input id="dt-slider" type="range" min="6" max="120" value="16" />
     </div>
     <div class="ctrl-group">
       <span class="ctrl-label">เวลา</span>
@@ -2216,6 +2638,16 @@
         <button class="ctrl-btn" id="imgw-up" title="ใหญ่ขึ้น">A+</button>
       </div>
       <input id="imgw-slider" type="range" min="60" max="400" step="20" value="180" />
+    </div>
+
+    <div class="ctrl-group">
+      <span class="ctrl-label">ขนาดไอคอน</span>
+      <div class="ctrl-row">
+        <button class="ctrl-btn" id="iconsize-dn" title="เล็กลง">A&minus;</button>
+        <span class="size-val" id="iconsize-val">100%</span>
+        <button class="ctrl-btn" id="iconsize-up" title="ใหญ่ขึ้น">A+</button>
+      </div>
+      <input id="iconsize-slider" type="range" min="0.6" max="5" step="0.1" value="1" />
     </div>
 
     <div class="ctrl-group" style="display:none;">
@@ -2397,6 +2829,9 @@
       const fonts = getCurrentFonts();
       return {
         vstyle: document.getElementById('vstyle-select')?.value || 'classic',
+        gradientTone: GRADIENT_TONE,
+        gradientIconMode: GRADIENT_ICON_MODE,
+        gradientIconColor: GRADIENT_ICON_COLOR,
         fontBody:    fonts.body,
         fontHeading: fonts.heading,
         theme: document.getElementById('theme-select')?.value || 'default',
@@ -2409,14 +2844,18 @@
         h1Clr: document.getElementById('h1-clr')?.value || '#1e2d4d',
         subFS: document.querySelector('#page-title p')?.style.fontSize || '',
         subClr: document.getElementById('sub-clr')?.value || '#7a8899',
+        subVisible: document.getElementById('sub-toggle') ? document.getElementById('sub-toggle').checked : true,
         sub2FS: document.querySelector('#page-title p.sub2')?.style.fontSize || '',
         sub2Clr: document.getElementById('sub2-clr')?.value || '#9aaabb',
+        sub2Visible: document.getElementById('sub2-toggle') ? document.getElementById('sub2-toggle').checked : true,
         dtFS: document.querySelector('.ev-date')?.style.fontSize || '',
         tmFS: document.querySelector('.ev-time')?.style.fontSize || '',
         tlColPx: TL_COL_PX,
         tlBarPx: TL_BAR_PX,
+        canvasPad: CANVAS_PAD,
         cols: COLS,
         evImgW: EV_IMG_W,
+        iconScale: EV_ICON_SCALE,
         zoom: zoomLevel,
       };
     }
@@ -2485,6 +2924,13 @@
       const titleSub2 = document.querySelector('#page-title p.sub2');
 
       if (s.vstyle) applyVisualStyle(s.vstyle);
+      if (s.gradientTone) applyGradientTone(s.gradientTone);
+      if (s.gradientIconColor) {
+        GRADIENT_ICON_COLOR = s.gradientIconColor;
+        const gicInp = document.getElementById('gradient-icon-color');
+        if (gicInp) gicInp.value = s.gradientIconColor;
+      }
+      if (s.gradientIconMode) applyGradientIconMode(s.gradientIconMode);
       if (s.fontBody || s.fontHeading) applyFont(s.fontBody, s.fontHeading);
       if (s.theme && palettes[s.theme]) {
         const themeSelect = document.getElementById('theme-select');
@@ -2524,20 +2970,36 @@
         titleSub.style.color = s.subClr;
         document.getElementById('sub-clr').value = s.subClr;
       }
+      if (typeof s.subVisible !== 'undefined') {
+        if (titleSub) titleSub.style.display = s.subVisible ? '' : 'none';
+        const t = document.getElementById('sub-toggle');
+        if (t) t.checked = s.subVisible;
+        const g = document.getElementById('sub-group');
+        if (g) g.classList.toggle('tgl-off', !s.subVisible);
+      }
       if (s.sub2FS && titleSub2) titleSub2.style.fontSize = s.sub2FS;
       if (s.sub2Clr && titleSub2) {
         titleSub2.style.color = s.sub2Clr;
         document.getElementById('sub2-clr').value = s.sub2Clr;
       }
+      if (typeof s.sub2Visible !== 'undefined') {
+        if (titleSub2) titleSub2.style.display = s.sub2Visible ? '' : 'none';
+        const t = document.getElementById('sub2-toggle');
+        if (t) t.checked = s.sub2Visible;
+        const g = document.getElementById('sub2-group');
+        if (g) g.classList.toggle('tgl-off', !s.sub2Visible);
+      }
       if (s.dtFS) allDates.forEach(el => el.style.fontSize = s.dtFS);
       if (s.tmFS) document.querySelectorAll('.ev-time').forEach(el => el.style.fontSize = s.tmFS);
       if (s.tlColPx) TL_COL_PX = Math.max(TL_COL_MIN, Math.min(TL_COL_MAX, s.tlColPx));
       if (s.tlBarPx) TL_BAR_PX = Math.max(TL_BAR_MIN, Math.min(TL_BAR_MAX, s.tlBarPx));
+      if (s.canvasPad) applyCanvasPad(s.canvasPad);
       if (s.cols)    COLS = s.cols;
       if (s.evImgW) {
         EV_IMG_W = Math.max(EV_IMG_W_MIN, Math.min(EV_IMG_W_MAX, s.evImgW));
         document.documentElement.style.setProperty('--ev-img-w', EV_IMG_W + 'px');
       }
+      if (s.iconScale) applyIconScale(s.iconScale);
       if (s.zoom) applyZoom(s.zoom);
 
       /* Sync control bar display values */
@@ -2649,6 +3111,113 @@
     };
     let palette = palettes.default;
 
+    /* ── Gradient style: selectable color tones ── */
+    const GRADIENT_PRESETS = {
+      'teal-purple': ['#14b8a6', '#6366f1', '#a855f7', '#ec4899'],
+      'ocean':       ['#0ea5e9', '#06b6d4', '#14b8a6'],
+      'sunset':      ['#f59e0b', '#f43f5e', '#a855f7'],
+      'forest':      ['#166534', '#65a30d', '#eab308'],
+      'berry':       ['#7e22ce', '#db2777', '#f43f5e'],
+      'fire':        ['#b91c1c', '#ea580c', '#f59e0b'],
+      'navy-sky':    ['#00264b', '#1a73e8', '#7dd3fc'],
+      'slate':       ['#1e293b', '#64748b', '#cbd5e1'],
+      'royal':       ['#4c1d95', '#6d28d9', '#c026d3'],
+      'candy':       ['#ec4899', '#8b5cf6', '#38bdf8'],
+      'emerald-gold':['#065f46', '#10b981', '#fbbf24'],
+      'volcano':     ['#1c1917', '#dc2626', '#f97316', '#fde047'],
+      'aurora':      ['#22c55e', '#06b6d4', '#8b5cf6'],
+      'rosegold':    ['#78350f', '#d97706', '#fbbf24', '#fecaca'],
+      'midnight':    ['#0f172a', '#4338ca', '#d946ef'],
+    };
+    let GRADIENT_TONE = 'teal-purple';
+
+    function hexToRgb(hex) {
+      const v = hex.replace('#', '');
+      return [parseInt(v.slice(0, 2), 16), parseInt(v.slice(2, 4), 16), parseInt(v.slice(4, 6), 16)];
+    }
+
+    /* Sample a color at position t (0..1) along the current gradient tone */
+    function sampleGradient(t) {
+      const stops = (GRADIENT_PRESETS[GRADIENT_TONE] || GRADIENT_PRESETS['teal-purple']).map(hexToRgb);
+      t = Math.max(0, Math.min(1, t));
+      const n = stops.length - 1;
+      const scaled = t * n;
+      const i = Math.min(n - 1, Math.floor(scaled));
+      const localT = scaled - i;
+      const a = stops[i], b = stops[i + 1];
+      const toHex = (v) => Math.round(v).toString(16).padStart(2, '0');
+      return `#${toHex(a[0] + (b[0] - a[0]) * localT)}${toHex(a[1] + (b[1] - a[1]) * localT)}${toHex(a[2] + (b[2] - a[2]) * localT)}`;
+    }
+
+    function applyGradientTone(tone) {
+      GRADIENT_TONE = GRADIENT_PRESETS[tone] ? tone : 'teal-purple';
+      const stops = GRADIENT_PRESETS[GRADIENT_TONE];
+      document.documentElement.style.setProperty('--gradient-bar', `linear-gradient(90deg, ${stops.join(', ')})`);
+      const sel = document.getElementById('gradient-tone-select');
+      if (sel) sel.value = GRADIENT_TONE;
+      recolorForVisualStyle();
+    }
+
+    /* Icon color mode for the Gradient style: follow the gradient tone
+       per-position, or use one fixed color for every icon circle. */
+    let GRADIENT_ICON_MODE = 'gradient'; /* 'gradient' | 'single' */
+    let GRADIENT_ICON_COLOR = '#00264b';
+
+    function applyGradientIconMode(mode) {
+      GRADIENT_ICON_MODE = mode === 'single' ? 'single' : 'gradient';
+      const sel = document.getElementById('gradient-icon-mode-select');
+      if (sel) sel.value = GRADIENT_ICON_MODE;
+      const colorInp = document.getElementById('gradient-icon-color');
+      if (colorInp) colorInp.style.display = (GRADIENT_ICON_MODE === 'single') ? '' : 'none';
+      recolorForVisualStyle();
+    }
+
+    function applyGradientIconColor(hex) {
+      GRADIENT_ICON_COLOR = hex;
+      const inp = document.getElementById('gradient-icon-color');
+      if (inp) inp.value = hex;
+      recolorForVisualStyle();
+    }
+
+    /* Re-colors icon circles / dots / stems / date+time text to follow the
+       gradient tone when the Gradient visual style is active, or restores
+       the normal per-event palette cycling otherwise. Index order of each
+       querySelectorAll matches allEvents order (rows render left→right,
+       top-to-bottom), so NodeList index === event index. */
+    function recolorForVisualStyle() {
+      const isGradient = document.body.dataset.vstyle === 'gradient';
+      const total = allEvents.length;
+      const colorAt = (idx) => isGradient
+        ? sampleGradient(total > 1 ? idx / (total - 1) : 0)
+        : palette[idx % palette.length];
+      const iconColorAt = (idx) => (isGradient && GRADIENT_ICON_MODE === 'single')
+        ? GRADIENT_ICON_COLOR
+        : colorAt(idx);
+
+      document.querySelectorAll('#root .ev-circle').forEach((el, idx) => {
+        const col = iconColorAt(idx);
+        el.style.background = col;
+        el.style.boxShadow = `0 4px 12px ${col}55`;
+      });
+      document.querySelectorAll('#root .ev-dot').forEach((el, idx) => {
+        el.style.borderColor = colorAt(idx);
+      });
+      document.querySelectorAll('#root .ev-date').forEach((el, idx) => {
+        el.style.color = colorAt(idx);
+      });
+      document.querySelectorAll('#root .ev-time').forEach((el, idx) => {
+        el.style.color = colorAt(idx);
+      });
+      document.querySelectorAll('#root .ev-stem').forEach((el, idx) => {
+        el.style.background = colorAt(idx);
+      });
+      if (!isGradient) {
+        document.querySelectorAll('#root .tl-bar-seg').forEach((el, idx) => {
+          el.style.background = palette[idx % palette.length];
+        });
+      }
+    }
+
     /* ── Icon auto-assign based on keywords ── */
     const iconRules = [
       { kw: ['ตรวจสอบ', 'ตรวจ'], icon: 'fa-magnifying-glass' },
@@ -2734,18 +3303,33 @@
       },
       {
         cat: 'กฎหมาย / สอบสวน', icons: [
-          'fa-scale-balanced', 'fa-gavel', 'fa-handcuffs', 'fa-shield-halved',
-          'fa-magnifying-glass', 'fa-building-shield', 'fa-user-shield', 'fa-eye',
-          'fa-fingerprint', 'fa-id-card', 'fa-id-badge', 'fa-stamp',
-          'fa-triangle-exclamation', 'fa-ban', 'fa-lock', 'fa-unlock',
+          'fa-scale-balanced', 'fa-scale-unbalanced', 'fa-gavel', 'fa-handcuffs',
+          'fa-shield-halved', 'fa-magnifying-glass', 'fa-magnifying-glass-chart', 'fa-magnifying-glass-location',
+          'fa-building-shield', 'fa-user-shield', 'fa-eye', 'fa-eye-slash',
+          'fa-fingerprint', 'fa-id-card', 'fa-id-badge', 'fa-id-card-clip',
+          'fa-stamp', 'fa-signature', 'fa-file-signature', 'fa-clipboard-list',
+          'fa-list-check', 'fa-hashtag', 'fa-location-crosshairs', 'fa-triangle-exclamation',
+          'fa-ban', 'fa-lock', 'fa-unlock', 'fa-unlock-keyhole',
         ]
       },
       {
         cat: 'ตำรวจ / ความมั่นคง', icons: [
           'fa-vest', 'fa-radio', 'fa-binoculars', 'fa-person-running',
-          'fa-car-burst', 'fa-truck-medical', 'fa-fire-extinguisher', 'fa-landmark-dome',
-          'fa-dog', 'fa-user-secret', 'fa-house-chimney-crack', 'fa-box-archive',
-          'fa-key', 'fa-newspaper', 'fa-map-pin',
+          'fa-car-burst', 'fa-car-side', 'fa-truck-medical', 'fa-fire-extinguisher',
+          'fa-landmark-dome', 'fa-dog', 'fa-user-secret', 'fa-user-ninja',
+          'fa-house-chimney-crack', 'fa-door-open', 'fa-box-archive', 'fa-warehouse',
+          'fa-key', 'fa-newspaper', 'fa-map-pin', 'fa-gauge-high',
+          'fa-user-lock', 'fa-user-injured', 'fa-hand-fist', 'fa-passport',
+        ]
+      },
+      {
+        cat: 'พยานหลักฐาน / นิติวิทยาศาสตร์', icons: [
+          'fa-fingerprint', 'fa-dna', 'fa-microscope', 'fa-flask',
+          'fa-vial', 'fa-vials', 'fa-syringe', 'fa-pills',
+          'fa-cannabis', 'fa-wine-bottle', 'fa-biohazard', 'fa-radiation',
+          'fa-bomb', 'fa-skull-crossbones', 'fa-boxes-stacked', 'fa-tag',
+          'fa-tags', 'fa-hard-drive', 'fa-sim-card', 'fa-network-wired',
+          'fa-camera', 'fa-video', 'fa-map-location-dot', 'fa-weight-scale',
         ]
       },
       {
@@ -2909,6 +3493,20 @@
     const TL_BAR_MAX = 40;
     const TL_BAR_STEP = 2;
 
+    let CANVAS_PAD = 48; /* px — uniform paper margin around the content */
+    const CANVAS_PAD_MIN = 8;
+    const CANVAS_PAD_MAX = 160;
+    const CANVAS_PAD_STEP = 8;
+
+    function applyCanvasPad(v) {
+      CANVAS_PAD = Math.max(CANVAS_PAD_MIN, Math.min(CANVAS_PAD_MAX, v));
+      const wrap = document.getElementById('canvas-wrap');
+      if (wrap) wrap.style.padding = CANVAS_PAD + 'px';
+      const ctrl = document.getElementById('pad-ctrl');
+      if (ctrl) ctrl.title = `ระยะขอบกระดาษรอบ Content (${CANVAS_PAD}px)`;
+      fitContentToCanvas();
+    }
+
     /* ── Rows helpers ── */
     function getRowCount() {
       return allEvents.length > 0 ? Math.ceil(allEvents.length / COLS) : 1;
@@ -2942,6 +3540,24 @@
     const EV_IMG_W_STEP = 20;
     const EV_IMG_MAX = 2; /* max images per event */
     document.documentElement.style.setProperty('--ev-img-w', EV_IMG_W + 'px');
+
+    /* ── Icon (event circle) size — a scale multiplier so it applies
+       uniformly across every visual style regardless of that style's own
+       base circle size (52px classic, 66px bold, 38px minimal, ...) ── */
+    let EV_ICON_SCALE = 1;
+    const EV_ICON_SCALE_MIN = 0.6;
+    const EV_ICON_SCALE_MAX = 5;
+    const EV_ICON_SCALE_STEP = 0.1;
+
+    function applyIconScale(v) {
+      EV_ICON_SCALE = Math.round(Math.max(EV_ICON_SCALE_MIN, Math.min(EV_ICON_SCALE_MAX, v)) * 10) / 10;
+      document.documentElement.style.setProperty('--ev-icon-scale', EV_ICON_SCALE);
+      const val = document.getElementById('iconsize-val');
+      if (val) val.textContent = Math.round(EV_ICON_SCALE * 100) + '%';
+      const sl = document.getElementById('iconsize-slider');
+      if (sl) sl.value = EV_ICON_SCALE;
+    }
+    applyIconScale(EV_ICON_SCALE);
 
     let _imgFileInput = null;
     let _imgTargetIdx = -1;
@@ -3238,6 +3854,8 @@
       /* Fit content into canvas (RAF-deferred so DOM is fully painted) */
       fitContentToCanvas();
 
+      applyStaircaseLayout();
+      recolorForVisualStyle();
       initControls();
     }
 
@@ -3344,39 +3962,84 @@
       document.body.dataset.vstyle = name || 'classic';
       const sel = document.getElementById('vstyle-select');
       if (sel) sel.value = name || 'classic';
+      const toneGroup = document.getElementById('gradient-tone-group');
+      if (toneGroup) toneGroup.style.display = (name === 'gradient') ? 'flex' : 'none';
+      const iconGroup = document.getElementById('gradient-icon-group');
+      if (iconGroup) iconGroup.style.display = (name === 'gradient') ? 'flex' : 'none';
+      applyStaircaseLayout();
+      recolorForVisualStyle();
+    }
+
+    /* ── STAIRCASE layout: lifts each column's dot/bar-segment/content
+       progressively higher moving left→right. Only active for the
+       'staircase' visual style; clears inline transforms otherwise so
+       switching away from it fully resets the layout.
+
+       The total ascent is capped to a fixed height (STAIRCASE_MAX_RISE)
+       regardless of how many columns are in the row — a per-column FIXED
+       px step compounded badly with many columns (e.g. 16 columns × 16px
+       = a 240px climb), producing a chaotic, illegible zigzag. Dividing a
+       constant budget across the columns instead keeps the "ascending
+       steps" impression readable no matter how dense the row is. ── */
+    const STAIRCASE_MAX_RISE = 110; /* px — total climb across a full row */
+    function applyStaircaseLayout() {
+      const isStaircase = document.body.dataset.vstyle === 'staircase';
+      document.querySelectorAll('.tl-section').forEach(section => {
+        const dotCells = section.querySelectorAll('.tl-dot-cell');
+        const segs = section.querySelectorAll('.tl-bar-seg');
+        const cells = section.querySelectorAll('.ev-cell-top, .ev-cell-bot');
+        if (!isStaircase) {
+          [...dotCells, ...segs, ...cells].forEach(el => { el.style.transform = ''; });
+          section.style.marginTop = '';
+          return;
+        }
+        /* Reserve headroom above the row so the ascending steps never
+           collide with the page title or the row above. */
+        const n = Math.max(1, cells.length - 1);
+        const step = STAIRCASE_MAX_RISE / n;
+        section.style.marginTop = (STAIRCASE_MAX_RISE + 40) + 'px';
+        dotCells.forEach((el, i) => { el.style.transform = `translateY(${-(i * step)}px)`; });
+        segs.forEach((el, i) => { el.style.transform = `translateY(${-(i * step)}px)`; });
+        cells.forEach((el, i) => { el.style.transform = `translateY(${-(i * step)}px)`; });
+      });
     }
 
     /* ═══════════════════════════════════════════════════
        Font catalog + dynamic loader
        ═══════════════════════════════════════════════════ */
+    /* Single shared catalog — used for both the body-font and heading-font
+       pickers so they always offer the exact same set of choices. */
     const fontCatalog = {
-      body: {
-        'Sarabun':             null, /* pre-loaded in @import */
-        'Noto Sans Thai':      'Noto+Sans+Thai:wght@300;400;500;600;700',
-        'IBM Plex Sans Thai':  'IBM+Plex+Sans+Thai:wght@300;400;500;600;700',
-        'Kanit':               'Kanit:wght@300;400;500;600;700',
-        'Mitr':                'Mitr:wght@300;400;500;600;700',
-        'Prompt':              'Prompt:wght@300;400;500;600;700',
-        'K2D':                 'K2D:wght@300;400;500;600;700',
-        'Itim':                'Itim',
-        'Trirong':             'Trirong:wght@300;400;500;600;700',
-        'Pridi':               'Pridi:wght@300;400;500;600;700',
-      },
-      heading: {
-        'Manrope':             null, /* pre-loaded */
-        'Inter':               'Inter:wght@400;500;600;700;800',
-        'Poppins':             'Poppins:wght@300;400;500;600;700;800',
-        'Plus Jakarta Sans':   'Plus+Jakarta+Sans:wght@300;400;500;600;700;800',
-        'Outfit':              'Outfit:wght@300;400;500;600;700',
-        'Space Grotesk':       'Space+Grotesk:wght@300;400;500;600;700',
-        'DM Sans':             'DM+Sans:ital,opsz,wght@0,9..40,300..700',
-        'Raleway':             'Raleway:wght@300;400;500;600;700;800',
-        'Sarabun':             null,
-        'Kanit':               'Kanit:wght@300;400;500;600;700',
-      },
+      'IBM Plex Sans Thai':  null, /* pre-loaded in @import — system default */
+      'Sarabun':             null, /* pre-loaded in @import */
+      'Noto Sans Thai':      'Noto+Sans+Thai:wght@300;400;500;600;700',
+      'Kanit':               'Kanit:wght@300;400;500;600;700',
+      'Mitr':                'Mitr:wght@300;400;500;600;700',
+      'Prompt':              'Prompt:wght@300;400;500;600;700',
+      'K2D':                 'K2D:wght@300;400;500;600;700',
+      'Chakra Petch':        'Chakra+Petch:wght@300;400;500;600;700',
+      'Bai Jamjuree':        'Bai+Jamjuree:wght@300;400;500;600;700',
+      'Athiti':              'Athiti:wght@300;400;500;600;700',
+      'Niramit':             'Niramit:wght@300;400;500;600;700',
+      'Anuphan':             'Anuphan:wght@300;400;500;600;700',
+      'Taviraj':             'Taviraj:wght@300;400;500;600;700',
+      'Trirong':             'Trirong:wght@300;400;500;600;700',
+      'Pridi':               'Pridi:wght@300;400;500;600;700',
+      'Itim':                'Itim',
+      'Sriracha':            'Sriracha',
+      'Charmonman':          'Charmonman:wght@400;700',
+      'Chonburi':            'Chonburi',
+      'Manrope':             null, /* pre-loaded */
+      'Inter':               'Inter:wght@400;500;600;700;800',
+      'Poppins':             'Poppins:wght@300;400;500;600;700;800',
+      'Plus Jakarta Sans':   'Plus+Jakarta+Sans:wght@300;400;500;600;700;800',
+      'Outfit':              'Outfit:wght@300;400;500;600;700',
+      'Space Grotesk':       'Space+Grotesk:wght@300;400;500;600;700',
+      'DM Sans':             'DM+Sans:ital,opsz,wght@0,9..40,300..700',
+      'Raleway':             'Raleway:wght@300;400;500;600;700;800',
     };
 
-    const _loadedFonts = new Set(['Sarabun', 'Manrope']); /* already in @import */
+    const _loadedFonts = new Set(['IBM Plex Sans Thai', 'Sarabun', 'Manrope']); /* already in @import */
 
     function loadGoogleFont(name, spec) {
       if (_loadedFonts.has(name) || !spec) return;
@@ -3392,15 +4055,15 @@
       const root = document.documentElement.style;
 
       if (bodyFont) {
-        loadGoogleFont(bodyFont, fontCatalog.body[bodyFont]);
-        root.setProperty('--font-body', `'${bodyFont}', sans-serif`);
+        loadGoogleFont(bodyFont, fontCatalog[bodyFont]);
+        root.setProperty('--font-body', `'${bodyFont}', 'IBM Plex Sans Thai', sans-serif`);
         const sel = document.getElementById('font-body-select');
         if (sel) sel.value = bodyFont;
       }
 
       if (headingFont) {
-        loadGoogleFont(headingFont, fontCatalog.heading[headingFont]);
-        root.setProperty('--font-heading', `'${headingFont}', 'Sarabun', sans-serif`);
+        loadGoogleFont(headingFont, fontCatalog[headingFont]);
+        root.setProperty('--font-heading', `'${headingFont}', 'IBM Plex Sans Thai', 'Sarabun', sans-serif`);
         const sel = document.getElementById('font-heading-select');
         if (sel) sel.value = headingFont;
       }
@@ -3414,8 +4077,8 @@
         return m ? m[1] : v.trim().split(',')[0].replace(/['"]/g, '').trim();
       };
       return {
-        body:    parseVar(style.getPropertyValue('--font-body') || 'Sarabun'),
-        heading: parseVar(style.getPropertyValue('--font-heading') || 'Manrope'),
+        body:    parseVar(style.getPropertyValue('--font-body') || 'IBM Plex Sans Thai'),
+        heading: parseVar(style.getPropertyValue('--font-heading') || 'IBM Plex Sans Thai'),
       };
     }
 
@@ -3438,6 +4101,9 @@
       const barhSep  = document.getElementById('barh-sep');
       if (barhCtrl) barhCtrl.style.display = 'flex';
       if (barhSep)  barhSep.style.display  = '';
+      /* Show paper margin selector */
+      const padCtrl = document.getElementById('pad-ctrl');
+      if (padCtrl) padCtrl.style.display = 'flex';
       const panel = document.getElementById('ctrl-panel');
       if (!panel.classList.contains('open')) {
         panel.classList.add('open');
@@ -3469,7 +4135,7 @@
       /* Font size: descriptions */
       const fsVal = document.getElementById('fs-val');
       const fsSlider = document.getElementById('fs-slider');
-      let curFS = fsSlider ? parseInt(fsSlider.value) : 12;
+      let curFS = fsSlider ? parseInt(fsSlider.value) : 13;
       function applyFS(v) {
         curFS = Math.max(6, v);
         allDesc.forEach(el => { el.style.fontSize = curFS + 'px'; });
@@ -3499,7 +4165,7 @@
       /* H1 font size */
       const h1Val = document.getElementById('h1-val');
       const h1Slider = document.getElementById('h1-slider');
-      let curH1FS = h1Slider ? parseInt(h1Slider.value) : 32;
+      let curH1FS = h1Slider ? parseInt(h1Slider.value) : 30;
       function applyH1FS(v) {
         curH1FS = Math.max(8, v);
         titleH1.style.fontSize = curH1FS + 'px';
@@ -3512,7 +4178,7 @@
       /* Subtitle font size */
       const subVal = document.getElementById('sub-val');
       const subSlider = document.getElementById('sub-slider');
-      let curSubFS = subSlider ? parseInt(subSlider.value) : 15;
+      let curSubFS = subSlider ? parseInt(subSlider.value) : 14;
       function applySubFS(v) {
         curSubFS = Math.max(6, v);
         titleSub.style.fontSize = curSubFS + 'px';
@@ -3525,7 +4191,7 @@
       /* Subtitle 2 font size */
       const sub2Val = document.getElementById('sub2-val');
       const sub2Slider = document.getElementById('sub2-slider');
-      let curSub2FS = sub2Slider ? parseInt(sub2Slider.value) : 14;
+      let curSub2FS = sub2Slider ? parseInt(sub2Slider.value) : 12;
       function applySub2FS(v) {
         curSub2FS = Math.max(6, v);
         if (titleSub2) titleSub2.style.fontSize = curSub2FS + 'px';
@@ -3535,10 +4201,30 @@
       }
       if (sub2Slider) sub2Slider.oninput = () => applySub2FS(parseInt(sub2Slider.value));
 
+      /* Subtitle 1 / 2 show-hide toggles — collapses the empty line instead
+         of leaving blank space when a project doesn't need it */
+      const subToggle = document.getElementById('sub-toggle');
+      const subGroup = document.getElementById('sub-group');
+      function applySubVisible(visible) {
+        if (titleSub) titleSub.style.display = visible ? '' : 'none';
+        if (subGroup) subGroup.classList.toggle('tgl-off', !visible);
+        if (subToggle) subToggle.checked = visible;
+      }
+      if (subToggle) subToggle.onchange = () => { applySubVisible(subToggle.checked); scheduleSave(); };
+
+      const sub2Toggle = document.getElementById('sub2-toggle');
+      const sub2Group = document.getElementById('sub2-group');
+      function applySub2Visible(visible) {
+        if (titleSub2) titleSub2.style.display = visible ? '' : 'none';
+        if (sub2Group) sub2Group.classList.toggle('tgl-off', !visible);
+        if (sub2Toggle) sub2Toggle.checked = visible;
+      }
+      if (sub2Toggle) sub2Toggle.onchange = () => { applySub2Visible(sub2Toggle.checked); scheduleSave(); };
+
       /* Date font size */
       const dtVal = document.getElementById('dt-val');
       const dtSlider = document.getElementById('dt-slider');
-      let curDtFS = dtSlider ? parseInt(dtSlider.value) : 17;
+      let curDtFS = dtSlider ? parseInt(dtSlider.value) : 16;
       function applyDtFS(v) {
         curDtFS = Math.max(6, v);
         allDates.forEach(el => { el.style.fontSize = curDtFS + 'px'; });
@@ -3595,6 +4281,12 @@
       document.getElementById('imgw-up').onclick = () => applyImgW(EV_IMG_W + EV_IMG_W_STEP);
       document.getElementById('imgw-dn').onclick = () => applyImgW(EV_IMG_W - EV_IMG_W_STEP);
 
+      /* Icon (event circle) size */
+      const iconsizeSlider = document.getElementById('iconsize-slider');
+      if (iconsizeSlider) iconsizeSlider.oninput = () => { applyIconScale(parseFloat(iconsizeSlider.value)); scheduleSave(); };
+      document.getElementById('iconsize-up').onclick = () => { applyIconScale(EV_ICON_SCALE + EV_ICON_SCALE_STEP); scheduleSave(); };
+      document.getElementById('iconsize-dn').onclick = () => { applyIconScale(EV_ICON_SCALE - EV_ICON_SCALE_STEP); scheduleSave(); };
+
       document.getElementById('cols-up').onclick = () => {
         COLS = Math.min(allEvents.length, COLS + 1);
         updateColsVal();
@@ -3640,10 +4332,30 @@
         scheduleSave();
       };
 
+      /* Paper margin control in top bar */
+      const padDn = document.getElementById('pad-dn');
+      const padUp = document.getElementById('pad-up');
+      if (padDn) padDn.onclick = () => { applyCanvasPad(CANVAS_PAD - CANVAS_PAD_STEP); scheduleSave(); };
+      if (padUp) padUp.onclick = () => { applyCanvasPad(CANVAS_PAD + CANVAS_PAD_STEP); scheduleSave(); };
+
       /* Visual style picker */
       const vstyleSelect = document.getElementById('vstyle-select');
       if (vstyleSelect) {
         vstyleSelect.onchange = (e) => { applyVisualStyle(e.target.value); scheduleSave(); };
+      }
+
+      /* Gradient tone picker (only relevant to the Gradient visual style) */
+      const gradientToneSelect = document.getElementById('gradient-tone-select');
+      if (gradientToneSelect) {
+        gradientToneSelect.onchange = (e) => { applyGradientTone(e.target.value); scheduleSave(); };
+      }
+      const gradientIconModeSelect = document.getElementById('gradient-icon-mode-select');
+      if (gradientIconModeSelect) {
+        gradientIconModeSelect.onchange = (e) => { applyGradientIconMode(e.target.value); scheduleSave(); };
+      }
+      const gradientIconColorInp = document.getElementById('gradient-icon-color');
+      if (gradientIconColorInp) {
+        gradientIconColorInp.addEventListener('input', () => { applyGradientIconColor(gradientIconColorInp.value); scheduleSave(); });
       }
 
       /* Font pickers */
@@ -3717,6 +4429,8 @@
       applySub2FS(curSub2FS);
       applyDtFS(curDtFS);
       applyTmFS(curTmFS);
+      applySubVisible(subToggle ? subToggle.checked : true);
+      applySub2Visible(sub2Toggle ? sub2Toggle.checked : true);
       updateColsVal();
     }
 
@@ -3877,10 +4591,10 @@
         const wrapRect = canvasWrap.getBoundingClientRect();
 
         /*
-         * Canvas CSS padding (56px top/bottom, 48px left/right).
-         * content-scaler starts at these offsets inside canvas-wrap.
+         * Canvas CSS padding — uniform, user-adjustable via CANVAS_PAD.
+         * content-scaler starts at this offset inside canvas-wrap.
          */
-        const PAD_X = 48, PAD_Y = 56;
+        const PAD_X = CANVAS_PAD, PAD_Y = CANVAS_PAD;
         const scalerLeft = wrapRect.left + PAD_X;
         const scalerTop  = wrapRect.top  + PAD_Y;
 
@@ -4245,10 +4959,13 @@
       const titleSub = document.querySelector('#page-title p');
       const titleSub2 = document.querySelector('#page-title p.sub2');
       const eventsSnapshot = allEvents.map((ev, idx) => {
-        const descEl = document.querySelector(`[data-id="desc-${Math.floor(idx / COLS)}-${idx % COLS}"]`);
-        const dateEl = document.querySelector(`[data-id="date-${Math.floor(idx / COLS)}-${idx % COLS}"]`);
+        const r = Math.floor(idx / COLS), c = idx % COLS;
+        const descEl = document.querySelector(`[data-id="desc-${r}-${c}"]`);
+        const dateEl = document.querySelector(`[data-id="date-${r}-${c}"]`);
+        const timeEl = document.querySelector(`[data-id="time-${r}-${c}"]`);
         return {
           date: dateEl ? getEditableText(dateEl) : ev.date,
+          time: timeEl ? getEditableText(timeEl) : (ev.time || ''),
           desc: descEl ? getEditableText(descEl) : ev.desc,
           icon: ev.icon,
           imgs: ev.imgs ? [...ev.imgs] : (ev.img ? [ev.img] : []),
@@ -4340,7 +5057,47 @@
     let _zoomHudTimer = null;
     let _zoomAnimRaf = null;
 
-    function applyZoom(newZ, snap = false, animate = false) {
+    /* Keep the point under the cursor (or the viewport centre, for button/
+       keyboard zoom) visually still while the scale changes — without this
+       correction the paper jumps around on every zoom step, which is what
+       made zooming feel incomplete/un-smooth. */
+    function _zoomFraction(wrap, clientX, clientY) {
+      const rect = wrap.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return { x: 0.5, y: 0.5 };
+      return {
+        x: Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)),
+        y: Math.max(0, Math.min(1, (clientY - rect.top) / rect.height)),
+      };
+    }
+
+    function _zoomCorrectScroll(wrap, viewport, anchor, frac) {
+      const rect = wrap.getBoundingClientRect();
+      const newX = rect.left + frac.x * rect.width;
+      const newY = rect.top + frac.y * rect.height;
+      viewport.scrollLeft += (newX - anchor.x);
+      viewport.scrollTop  += (newY - anchor.y);
+    }
+
+    /* `transform: scale()` only changes the PAINTED size of #canvas-wrap —
+       its layout box (and therefore #canvas-stage's scrollable size) stays
+       at the unscaled dimensions. At high zoom this left the scaled paper's
+       left/right/bottom edges outside the reachable scroll range. Reserve
+       real layout space (margin, which DOES resize the flex container) so
+       panning/scrolling can always reach every edge of the zoomed paper.
+       transform-origin is "top center": growth is symmetric left/right and
+       downward-only, so only those three margins are needed. */
+    function _updateZoomSpacing() {
+      const wrap = document.getElementById('canvas-wrap');
+      if (!wrap) return;
+      const extra = Math.max(0, zoomLevel - 1);
+      const extraX = (wrap.offsetWidth * extra) / 2;
+      const extraY = wrap.offsetHeight * extra;
+      wrap.style.marginLeft = extraX > 0.5 ? extraX + 'px' : '';
+      wrap.style.marginRight = extraX > 0.5 ? extraX + 'px' : '';
+      wrap.style.marginBottom = extraY > 0.5 ? extraY + 'px' : '';
+    }
+
+    function applyZoom(newZ, snap = false, animate = false, anchorX = null, anchorY = null) {
       let z = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, newZ));
       /* snap to nearest anchor when close enough */
       if (snap) {
@@ -4349,6 +5106,19 @@
         }
       }
       const wrap = document.getElementById('canvas-wrap');
+      const viewport = document.getElementById('canvas-viewport');
+
+      let anchor = null, frac = { x: 0.5, y: 0.5 };
+      if (wrap && viewport) {
+        if (anchorX == null || anchorY == null) {
+          const vr = viewport.getBoundingClientRect();
+          anchorX = vr.left + vr.width / 2;
+          anchorY = vr.top + vr.height / 2;
+        }
+        anchor = { x: anchorX, y: anchorY };
+        frac = _zoomFraction(wrap, anchorX, anchorY);
+      }
+
       if (animate && wrap) {
         /* smooth animation for button clicks via RAF lerp */
         if (_zoomAnimRaf) cancelAnimationFrame(_zoomAnimRaf);
@@ -4361,16 +5131,26 @@
           const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
           const cur = from + (to - from) * ease;
           zoomLevel = parseFloat(cur.toFixed(4));
-          if (wrap) wrap.style.transform = `scale(${zoomLevel})`;
+          wrap.style.transform = `scale(${zoomLevel})`;
+          _updateZoomSpacing();
+          if (anchor) _zoomCorrectScroll(wrap, viewport, anchor, frac);
           _updateZoomHUD();
           if (t < 1) _zoomAnimRaf = requestAnimationFrame(tick);
-          else { zoomLevel = parseFloat(to.toFixed(4)); wrap.style.transform = `scale(${zoomLevel})`; scheduleSave(); }
+          else {
+            zoomLevel = parseFloat(to.toFixed(4));
+            wrap.style.transform = `scale(${zoomLevel})`;
+            _updateZoomSpacing();
+            if (anchor) _zoomCorrectScroll(wrap, viewport, anchor, frac);
+            scheduleSave();
+          }
         }
         _zoomAnimRaf = requestAnimationFrame(tick);
       } else {
         if (_zoomAnimRaf) { cancelAnimationFrame(_zoomAnimRaf); _zoomAnimRaf = null; }
         zoomLevel = parseFloat(z.toFixed(4));
         if (wrap) wrap.style.transform = `scale(${zoomLevel})`;
+        _updateZoomSpacing();
+        if (anchor) _zoomCorrectScroll(wrap, viewport, anchor, frac);
         _updateZoomHUD();
       }
     }
@@ -4393,7 +5173,8 @@
         /* normalize across devices: clamp deltaY */
         const raw = Math.max(-8, Math.min(8, e.deltaY));
         const delta = -raw * ZOOM_STEP;
-        applyZoom(zoomLevel + delta, false, false); /* no snap/animate during scroll for max responsiveness */
+        /* anchor on the cursor so the point under it stays put while zooming */
+        applyZoom(zoomLevel + delta, false, false, e.clientX, e.clientY);
         clearTimeout(_wheelSaveTimer);
         _wheelSaveTimer = setTimeout(() => scheduleSave(), 600);
       }
@@ -4572,6 +5353,7 @@
         /* Auto mode: reset any previous scale */
         scaler.style.transform = '';
         scaler.style.width = '';
+        _updateZoomSpacing();
         return;
       }
 
@@ -4583,9 +5365,9 @@
       const naturalW = scaler.scrollWidth;
       const naturalH = scaler.scrollHeight;
 
-      /* ② Available inner area = paper minus padding (56px × 48px) */
-      const PAD_X = 96;  /* 48 × 2 */
-      const PAD_Y = 112; /* 56 × 2 */
+      /* ② Available inner area = paper minus padding (uniform, both sides) */
+      const PAD_X = CANVAS_PAD * 2;
+      const PAD_Y = CANVAS_PAD * 2;
       const availW = wrap.clientWidth  - PAD_X;
 
       if (naturalW <= 0 || naturalH <= 0 || availW <= 0) return;
@@ -4704,8 +5486,9 @@
       const viewport = document.getElementById('canvas-viewport');
       if (!viewport) return;
 
-      let spaceDown = false;
-      let panning   = false;
+      let spaceDown   = false;
+      let panning     = false;
+      let activePtrId = null;
       let px = 0, py = 0; /* last pointer position */
       let sx = 0, sy = 0; /* scroll at pan start */
 
@@ -4718,6 +5501,24 @@
         return false;
       }
 
+      function endPan() {
+        if (activePtrId !== null && viewport.hasPointerCapture?.(activePtrId)) {
+          viewport.releasePointerCapture(activePtrId);
+        }
+        panning = false;
+        activePtrId = null;
+        document.body.classList.remove('panning');
+      }
+
+      /* Fully exit pan mode — used on keyup and on any of the focus-loss
+         events below, so a swallowed keyup can never leave the cursor/click
+         handling stuck in "grab" mode. */
+      function exitSpacePan() {
+        endPan();
+        spaceDown = false;
+        document.body.classList.remove('space-pan');
+      }
+
       document.addEventListener('keydown', (e) => {
         if (e.code === 'Space' && !e.repeat && !isEditingText()) {
           e.preventDefault();
@@ -4727,17 +5528,23 @@
       });
 
       document.addEventListener('keyup', (e) => {
-        if (e.code === 'Space') {
-          spaceDown = false;
-          panning   = false;
-          document.body.classList.remove('space-pan', 'panning');
-        }
+        if (e.code === 'Space') exitSpacePan();
+      });
+
+      /* Safety valves: if the window/tab loses focus while Space is held
+         (alt-tab, opening devtools, a confirm() dialog from deleteEvent(),
+         switching apps, ...) the keyup event never arrives and the app used
+         to get stuck permanently in pan/grab mode. Reset on all of these. */
+      window.addEventListener('blur', exitSpacePan);
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) exitSpacePan();
       });
 
       viewport.addEventListener('pointerdown', (e) => {
         if (!spaceDown || e.button !== 0) return;
         e.preventDefault();
         panning = true;
+        activePtrId = e.pointerId;
         px = e.clientX;
         py = e.clientY;
         sx = viewport.scrollLeft;
@@ -4747,15 +5554,15 @@
       });
 
       viewport.addEventListener('pointermove', (e) => {
-        if (!panning) return;
+        if (!panning || e.pointerId !== activePtrId) return;
         const dx = e.clientX - px;
         const dy = e.clientY - py;
         viewport.scrollLeft = sx - dx;
         viewport.scrollTop  = sy - dy;
       });
 
-      viewport.addEventListener('pointerup',     () => { panning = false; document.body.classList.remove('panning'); });
-      viewport.addEventListener('pointercancel', () => { panning = false; document.body.classList.remove('panning'); });
+      viewport.addEventListener('pointerup',     (e) => { if (e.pointerId === activePtrId) endPan(); });
+      viewport.addEventListener('pointercancel', (e) => { if (e.pointerId === activePtrId) endPan(); });
     })();
 
     /* ── Auto-restore on page load ── */
