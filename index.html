@@ -962,6 +962,19 @@
       gap: 8px;
     }
 
+    .ctrl-label-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    /* Fixed width so the toggle switch lands at the same x position
+       whether the label reads "หัวรอง" or the longer "หัวรอง 2" */
+    .ctrl-label-left .ctrl-label {
+      min-width: 58px;
+    }
+
     /* ── Small on/off toggle switch (show/hide a text element) ── */
     .tgl-switch {
       position: relative;
@@ -1064,6 +1077,14 @@
       background: none;
       box-shadow: 0 0 0 1px var(--outline);
       transition: box-shadow 0.15s;
+    }
+
+    /* Invisible placeholder the same width as a color swatch, so sliders in
+       rows without a color picker shrink to the exact same length as ones
+       that have it — otherwise those bars would visibly run longer. */
+    .clr-spacer {
+      width: 27px;
+      flex-shrink: 0;
     }
 
     #ctrl-panel input[type="color"]:hover {
@@ -2550,108 +2571,113 @@
     </div>
 
     <div class="ctrl-group">
-      <span class="ctrl-label">ข้อความ</span>
-      <div class="ctrl-row">
-        <button class="ctrl-btn" id="fs-dn" title="เล็กลง">A&minus;</button>
+      <div class="ctrl-label-row">
+        <span class="ctrl-label">ข้อความ</span>
         <span class="size-val" id="fs-val">&mdash;</span>
-        <button class="ctrl-btn" id="fs-up" title="ใหญ่ขึ้น">A+</button>
+      </div>
+      <div class="ctrl-row">
+        <input id="fs-slider" type="range" min="6" max="40" value="13" />
         <input type="color" id="desc-clr" title="สีข้อความ" />
       </div>
-      <input id="fs-slider" type="range" min="6" max="40" value="13" />
     </div>
 
     <div class="ctrl-group">
-      <span class="ctrl-label">ความกว้าง</span>
-      <div class="ctrl-row">
-        <button class="ctrl-btn" id="w-dn" title="แคบลง">&minus;</button>
+      <div class="ctrl-label-row">
+        <span class="ctrl-label">ความกว้าง</span>
         <span class="size-val" id="w-val">&mdash;</span>
-        <button class="ctrl-btn" id="w-up" title="กว้างขึ้น">+</button>
       </div>
-      <input id="width-slider" type="range" min="60" max="2000" value="195" />
+      <div class="ctrl-row">
+        <input id="width-slider" type="range" min="60" max="2000" value="195" />
+        <span class="clr-spacer"></span>
+      </div>
     </div>
 
     <div class="ctrl-group">
-      <span class="ctrl-label">หัวข้อ</span>
-      <div class="ctrl-row">
-        <button class="ctrl-btn" id="h1-dn" title="เล็กลง">A&minus;</button>
+      <div class="ctrl-label-row">
+        <span class="ctrl-label">หัวข้อ</span>
         <span class="size-val" id="h1-val">&mdash;</span>
-        <button class="ctrl-btn" id="h1-up" title="ใหญ่ขึ้น">A+</button>
+      </div>
+      <div class="ctrl-row">
+        <input id="h1-slider" type="range" min="8" max="120" value="30" />
         <input type="color" id="h1-clr" title="สีหัวข้อ" />
       </div>
-      <input id="h1-slider" type="range" min="8" max="72" value="30" />
     </div>
 
     <div class="ctrl-group" id="sub-group">
       <div class="ctrl-label-row">
-        <span class="ctrl-label">หัวรอง</span>
-        <label class="tgl-switch" title="แสดง/ซ่อนหัวรอง">
-          <input type="checkbox" id="sub-toggle" checked>
-          <span class="tgl-track"></span>
-        </label>
+        <div class="ctrl-label-left">
+          <span class="ctrl-label">หัวรอง</span>
+          <label class="tgl-switch" title="แสดง/ซ่อนหัวรอง">
+            <input type="checkbox" id="sub-toggle" checked>
+            <span class="tgl-track"></span>
+          </label>
+        </div>
+        <span class="size-val" id="sub-val">&mdash;</span>
       </div>
       <div class="ctrl-row">
-        <button class="ctrl-btn" id="sub-dn" title="เล็กลง">A&minus;</button>
-        <span class="size-val" id="sub-val">&mdash;</span>
-        <button class="ctrl-btn" id="sub-up" title="ใหญ่ขึ้น">A+</button>
+        <input id="sub-slider" type="range" min="6" max="40" value="14" />
         <input type="color" id="sub-clr" title="สีหัวรอง" />
       </div>
-      <input id="sub-slider" type="range" min="6" max="40" value="14" />
     </div>
 
     <div class="ctrl-group" id="sub2-group">
       <div class="ctrl-label-row">
-        <span class="ctrl-label">หัวรอง 2</span>
-        <label class="tgl-switch" title="แสดง/ซ่อนหัวรอง 2">
-          <input type="checkbox" id="sub2-toggle" checked>
-          <span class="tgl-track"></span>
-        </label>
+        <div class="ctrl-label-left">
+          <span class="ctrl-label">หัวรอง 2</span>
+          <label class="tgl-switch" title="แสดง/ซ่อนหัวรอง 2">
+            <input type="checkbox" id="sub2-toggle" checked>
+            <span class="tgl-track"></span>
+          </label>
+        </div>
+        <span class="size-val" id="sub2-val">&mdash;</span>
       </div>
       <div class="ctrl-row">
-        <button class="ctrl-btn" id="sub2-dn" title="เล็กลง">A&minus;</button>
-        <span class="size-val" id="sub2-val">&mdash;</span>
-        <button class="ctrl-btn" id="sub2-up" title="ใหญ่ขึ้น">A+</button>
+        <input id="sub2-slider" type="range" min="6" max="40" value="12" />
         <input type="color" id="sub2-clr" title="สีหัวรอง 2" />
       </div>
-      <input id="sub2-slider" type="range" min="6" max="40" value="12" />
     </div>
 
     <div class="ctrl-group">
-      <span class="ctrl-label">วันที่</span>
-      <div class="ctrl-row">
-        <button class="ctrl-btn" id="dt-dn" title="เล็กลง">A&minus;</button>
+      <div class="ctrl-label-row">
+        <span class="ctrl-label">วันที่</span>
         <span class="size-val" id="dt-val">&mdash;</span>
-        <button class="ctrl-btn" id="dt-up" title="ใหญ่ขึ้น">A+</button>
       </div>
-      <input id="dt-slider" type="range" min="6" max="120" value="16" />
+      <div class="ctrl-row">
+        <input id="dt-slider" type="range" min="6" max="120" value="16" />
+        <span class="clr-spacer"></span>
+      </div>
     </div>
     <div class="ctrl-group">
-      <span class="ctrl-label">เวลา</span>
-      <div class="ctrl-row">
-        <button class="ctrl-btn" id="tm-dn" title="เล็กลง">A&minus;</button>
+      <div class="ctrl-label-row">
+        <span class="ctrl-label">เวลา</span>
         <span class="size-val" id="tm-val">&mdash;</span>
-        <button class="ctrl-btn" id="tm-up" title="ใหญ่ขึ้น">A+</button>
       </div>
-      <input id="tm-slider" type="range" min="6" max="40" value="11" />
+      <div class="ctrl-row">
+        <input id="tm-slider" type="range" min="6" max="40" value="11" />
+        <span class="clr-spacer"></span>
+      </div>
     </div>
 
     <div class="ctrl-group">
-      <span class="ctrl-label">ขนาดรูปภาพ</span>
-      <div class="ctrl-row">
-        <button class="ctrl-btn" id="imgw-dn" title="เล็กลง">A&minus;</button>
+      <div class="ctrl-label-row">
+        <span class="ctrl-label">ขนาดรูปภาพ</span>
         <span class="size-val" id="imgw-val">180px</span>
-        <button class="ctrl-btn" id="imgw-up" title="ใหญ่ขึ้น">A+</button>
       </div>
-      <input id="imgw-slider" type="range" min="60" max="400" step="20" value="180" />
+      <div class="ctrl-row">
+        <input id="imgw-slider" type="range" min="60" max="400" step="20" value="180" />
+        <span class="clr-spacer"></span>
+      </div>
     </div>
 
     <div class="ctrl-group">
-      <span class="ctrl-label">ขนาดไอคอน</span>
-      <div class="ctrl-row">
-        <button class="ctrl-btn" id="iconsize-dn" title="เล็กลง">A&minus;</button>
+      <div class="ctrl-label-row">
+        <span class="ctrl-label">ขนาดไอคอน</span>
         <span class="size-val" id="iconsize-val">100%</span>
-        <button class="ctrl-btn" id="iconsize-up" title="ใหญ่ขึ้น">A+</button>
       </div>
-      <input id="iconsize-slider" type="range" min="0.6" max="5" step="0.1" value="1" />
+      <div class="ctrl-row">
+        <input id="iconsize-slider" type="range" min="0.6" max="5" step="0.1" value="1" />
+        <span class="clr-spacer"></span>
+      </div>
     </div>
 
     <div class="ctrl-group" style="display:none;">
@@ -4256,22 +4282,6 @@
       const colsVal = document.getElementById('cols-val');
       function updateColsVal() { colsVal.textContent = COLS; }
 
-      /* Wire buttons */
-      document.getElementById('fs-up').onclick = () => applyFS(curFS + 1);
-      document.getElementById('fs-dn').onclick = () => applyFS(curFS - 1);
-      document.getElementById('w-up').onclick = () => applyW(curW + 10);
-      document.getElementById('w-dn').onclick = () => applyW(curW - 10);
-      document.getElementById('h1-up').onclick = () => applyH1FS(curH1FS + 1);
-      document.getElementById('h1-dn').onclick = () => applyH1FS(curH1FS - 1);
-      document.getElementById('sub-up').onclick = () => applySubFS(curSubFS + 1);
-      document.getElementById('sub-dn').onclick = () => applySubFS(curSubFS - 1);
-      document.getElementById('sub2-up').onclick = () => applySub2FS(curSub2FS + 1);
-      document.getElementById('sub2-dn').onclick = () => applySub2FS(curSub2FS - 1);
-      document.getElementById('dt-up').onclick = () => applyDtFS(curDtFS + 1);
-      document.getElementById('dt-dn').onclick = () => applyDtFS(curDtFS - 1);
-      document.getElementById('tm-up').onclick = () => applyTmFS(curTmFS + 1);
-      document.getElementById('tm-dn').onclick = () => applyTmFS(curTmFS - 1);
-
       /* Image width */
       const imgwSlider = document.getElementById('imgw-slider');
       const imgwVal = document.getElementById('imgw-val');
@@ -4283,14 +4293,10 @@
         scheduleSave();
       }
       if (imgwSlider) imgwSlider.oninput = () => applyImgW(parseInt(imgwSlider.value));
-      document.getElementById('imgw-up').onclick = () => applyImgW(EV_IMG_W + EV_IMG_W_STEP);
-      document.getElementById('imgw-dn').onclick = () => applyImgW(EV_IMG_W - EV_IMG_W_STEP);
 
       /* Icon (event circle) size */
       const iconsizeSlider = document.getElementById('iconsize-slider');
       if (iconsizeSlider) iconsizeSlider.oninput = () => { applyIconScale(parseFloat(iconsizeSlider.value)); scheduleSave(); };
-      document.getElementById('iconsize-up').onclick = () => { applyIconScale(EV_ICON_SCALE + EV_ICON_SCALE_STEP); scheduleSave(); };
-      document.getElementById('iconsize-dn').onclick = () => { applyIconScale(EV_ICON_SCALE - EV_ICON_SCALE_STEP); scheduleSave(); };
 
       document.getElementById('cols-up').onclick = () => {
         syncEventsFromDOM();
