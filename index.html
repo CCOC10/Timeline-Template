@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Timeline Template</title>
+  <title>Fast TIMELINE</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -72,6 +72,49 @@
       --font-ui: 'IBM Plex Sans Thai', 'Sarabun', sans-serif;
       --font-body: 'IBM Plex Sans Thai', 'Sarabun', sans-serif;
       --font-heading: 'IBM Plex Sans Thai', 'Manrope', 'Sarabun', sans-serif;
+    }
+
+    /* ── Dark mode — UI chrome only. The paper/document keeps its own
+       light tokens (pinned on #canvas-wrap below) so what you export to
+       PDF looks identical no matter which UI theme is active. ── */
+    body.dark {
+      --surface: #131314;
+      --surface-low: #18191b;
+      --surface-mid: #232427;
+      --surface-high: #2e2f33;
+      --surface-highest: #3a3b40;
+      --surface-white: #1e1f22;
+      --on-surface: #e8eaed;
+      --on-surface-var: #bdc1c6;
+      --primary: #8ab4f8;
+      --primary-hover: #aecbfa;
+      --primary-ctr: #aecbfa;
+      --primary-fixed: rgba(138, 180, 248, 0.18);
+      --on-primary-fixed: #d2e3fc;
+      --secondary-fixed: rgba(138, 180, 248, 0.12);
+      --outline: #3c4043;
+      --outline-var: #5f6368;
+      --app-bg-gradient:
+        radial-gradient(circle at 6% 6%, rgba(120, 119, 255, 0.10), transparent 32%),
+        radial-gradient(circle at 94% 8%, rgba(255, 105, 135, 0.08), transparent 34%),
+        radial-gradient(circle at 92% 96%, rgba(255, 159, 67, 0.08), transparent 36%),
+        radial-gradient(circle at 6% 94%, rgba(0, 200, 180, 0.07), transparent 34%);
+      --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.35);
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.40), 0 1px 2px rgba(0, 0, 0, 0.30);
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.35);
+      --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.35);
+    }
+
+    /* Pin the document's own tokens: the paper is a document, always
+       rendered with light-mode ink regardless of the app theme. */
+    #canvas-wrap {
+      --surface-white: #ffffff;
+      --surface-mid: #e8eaed;
+      --surface-high: #dfe1e5;
+      --on-surface: #1f1f1f;
+      --on-surface-var: #444746;
+      --outline: #dadce0;
+      --primary: #00264b;
     }
 
     html {
@@ -647,6 +690,141 @@
       white-space: nowrap;
     }
 
+    /* ══ Node = รูปภาพ (ใช้รูปแทนไอคอน) ══ */
+    .ev-circle.img-node {
+      overflow: hidden;
+      background: var(--surface-white);
+    }
+
+    .ev-circle.img-node i { display: none; }
+
+    .ev-circle.img-node img.node-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: inherit; /* ตามรูปทรงของ node */
+      display: block;
+      pointer-events: none;
+    }
+
+    /* รูปทรงรูปภาพมีผลกับ node ที่ใช้รูปแทนไอคอนด้วย
+       (ค่าเริ่มต้นของ .ev-circle คือวงกลม 50%) */
+    body[data-imgshape="rounded"] .ev-circle.img-node { border-radius: 18%; }
+    body[data-imgshape="square"] .ev-circle.img-node { border-radius: 0; }
+
+    /* ══ รูปทรงรูปภาพ (Image shape) ══ */
+    body[data-imgshape="circle"] .ev-img {
+      width: var(--ev-img-w, 180px);
+      height: var(--ev-img-w, 180px);
+      max-width: none;
+      max-height: none;
+      border-radius: 50%;
+    }
+
+    body[data-imgshape="square"] .ev-img {
+      border-radius: 0;
+    }
+
+    /* ══ Vertical timeline (แนวตั้ง) ══ */
+    .vtl-wrap {
+      display: flex;
+      flex-direction: column;
+      padding: 8px 0;
+    }
+
+    .vtl-item {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr 110px 1fr;
+      column-gap: 10px;
+      padding: 24px 0;
+    }
+
+    /* เส้นแกนกลาง — หนึ่ง segment ต่อ event สีตามพาเลตต์ (คลาส tl-bar-seg
+       เดียวกับแนวนอน เพื่อให้ exportPDF วาดเป็นสี่เหลี่ยมสีได้อัตโนมัติ) */
+    .vtl-seg {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 6px;
+      height: auto;
+      flex: none;
+      opacity: 0.9;
+      z-index: 1;
+    }
+
+    .vtl-item:first-child .vtl-seg { top: 24px; border-radius: 3px 3px 0 0; }
+    .vtl-item:last-child .vtl-seg { bottom: 24px; border-radius: 0 0 3px 3px; }
+
+    /* ก้านเชื่อมจากเส้นกลางไปฝั่งเนื้อหา */
+    .vtl-stem {
+      position: absolute;
+      top: calc(24px + 26px * var(--ev-icon-scale, 1));
+      transform: translateY(-50%);
+      width: 130px;
+      height: 3px;
+      opacity: 0.5;
+      z-index: 2;
+    }
+
+    .vtl-left .vtl-stem { right: 50%; }
+    .vtl-right .vtl-stem { left: 50%; }
+
+    .vtl-node {
+      grid-column: 2;
+      grid-row: 1;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      position: relative;
+      z-index: 3;
+    }
+
+    .vtl-content {
+      grid-row: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+      position: relative;
+      z-index: 4;
+    }
+
+    .vtl-left .vtl-content { grid-column: 1; justify-self: end; padding-right: 4px; }
+    .vtl-right .vtl-content { grid-column: 3; justify-self: start; padding-left: 4px; }
+
+    /* .ev-desc ใช้ negative margin ในแนวนอน — โหมดแนวตั้งไม่ต้องการ */
+    .vtl-item .ev-desc {
+      margin-left: 0 !important;
+      margin-right: 0 !important;
+    }
+
+    .vtl-item:hover .ev-delete-btn { display: flex; }
+
+    .vtl-item:hover .ev-img-hint {
+      opacity: 0.32;
+      border-color: currentColor;
+      pointer-events: auto;
+    }
+
+    .vtl-item.drag-over {
+      background: var(--primary-fixed);
+      border-radius: var(--radius-sm);
+      outline: 2px dashed var(--primary);
+      outline-offset: 3px;
+    }
+
+    .vtl-item.dragging { opacity: 0.28; }
+
+    .vtl-item.img-drop-over {
+      outline: 2px dashed var(--primary, #4a7fcb);
+      outline-offset: 4px;
+      border-radius: 6px;
+    }
+
     /* ── Top Bar: floating capsule toolbar ── */
     #top-bar {
       position: fixed;
@@ -670,13 +848,48 @@
     }
 
     .tb-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
       font-family: var(--font-ui);
-      font-size: var(--fs-title);
-      font-weight: 700;
-      color: var(--on-surface);
-      letter-spacing: -0.2px;
+      font-size: var(--fs-label);
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 0.3px;
       margin-right: 6px;
       white-space: nowrap;
+      padding: 8px 16px 8px 12px;
+      border-radius: var(--radius-full);
+      background: linear-gradient(120deg, #4f46e5, #7c3aed 45%, #d946ef);
+      box-shadow:
+        0 0 14px rgba(124, 58, 237, 0.55),
+        0 4px 16px rgba(124, 58, 237, 0.30),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      animation: brand-glow 3.2s ease-in-out infinite;
+      user-select: none;
+    }
+
+    @keyframes brand-glow {
+      0%, 100% {
+        box-shadow:
+          0 0 12px rgba(124, 58, 237, 0.45),
+          0 4px 16px rgba(124, 58, 237, 0.28),
+          inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      }
+      50% {
+        box-shadow:
+          0 0 22px rgba(217, 70, 239, 0.65),
+          0 4px 18px rgba(124, 58, 237, 0.40),
+          inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      }
+    }
+
+    .tb-bolt {
+      width: 14px;
+      height: 14px;
+      fill: #ffd83d;
+      filter: drop-shadow(0 0 5px rgba(255, 216, 61, 0.85));
+      flex-shrink: 0;
     }
 
     .tb-sep {
@@ -1060,9 +1273,15 @@
       font-family: var(--font-ui);
       font-size: var(--fs-caption);
       font-weight: 600;
-      color: var(--primary);
-      min-width: 32px;
+      font-variant-numeric: tabular-nums;
+      color: var(--on-surface-var);
+      background: var(--surface-low);
+      border: 1px solid var(--outline);
+      border-radius: var(--radius-full);
+      padding: 1px 8px;
+      min-width: 52px;
       text-align: center;
+      flex-shrink: 0;
     }
 
     #ctrl-panel input[type="color"] {
@@ -1174,6 +1393,83 @@
       box-shadow: 0 0 0 1px var(--primary);
     }
 
+    /* ── Collapsible sidebar sections ──
+       Two type levels only: section header (micro/uppercase) and control
+       label (label size, sentence case) — everything else is a value chip. */
+    .cp-sec {
+      border-top: 1px solid var(--outline);
+    }
+
+    .cp-sec:first-of-type {
+      border-top: none;
+    }
+
+    .cp-sec > summary {
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 2px;
+      cursor: pointer;
+      font-size: var(--fs-micro);
+      font-weight: 700;
+      letter-spacing: 0.7px;
+      text-transform: uppercase;
+      color: var(--on-surface-var);
+      border-radius: var(--radius-xs);
+      transition: color 0.15s;
+    }
+
+    .cp-sec > summary::-webkit-details-marker { display: none; }
+
+    .cp-sec > summary:hover { color: var(--on-surface); }
+
+    .cp-sec > summary > i:first-child {
+      width: 15px;
+      text-align: center;
+      font-size: 0.62rem;
+      opacity: 0.75;
+    }
+
+    .cp-chev {
+      margin-left: auto;
+      font-size: 0.55rem !important;
+      opacity: 0.6;
+      transition: transform 0.2s;
+    }
+
+    .cp-sec[open] > summary .cp-chev { transform: rotate(180deg); }
+
+    .cp-sec-body {
+      padding: 0 0 12px;
+    }
+
+    .cp-sec-body .ctrl-group { padding: 7px 0; }
+
+    .cp-sec-body .ctrl-group + .ctrl-group::before { display: none; }
+
+    .cp-sec-body .ctrl-label {
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: var(--fs-label);
+      font-weight: 500;
+      color: var(--on-surface-var);
+    }
+
+    /* Live swatch strip previewing the selected timeline palette */
+    #palette-preview {
+      display: flex;
+      gap: 4px;
+      padding-top: 6px;
+    }
+
+    #palette-preview span {
+      flex: 1;
+      height: 9px;
+      border-radius: 5px;
+      background: var(--surface-high);
+    }
+
     /* ── Action buttons inside panel ── */
     .cp-actions {
       display: flex;
@@ -1232,6 +1528,27 @@
     .cp-actions .btn-reload {
       background: #fce8e6;
       color: #c5221f;
+    }
+
+    /* ── Dark-mode variants of the tinted action buttons (their light
+       pastel fills are hardcoded above and would glow in a dark UI) ── */
+    body.dark .tb-btn.tb-pdf,
+    body.dark .cp-actions .btn-pdf { background: rgba(251, 188, 4, 0.16); color: #fdd663; }
+    body.dark .tb-btn.tb-pdf:hover,
+    body.dark .cp-actions .btn-pdf:hover { background: rgba(251, 188, 4, 0.26); filter: none; }
+    body.dark .tb-btn.tb-save,
+    body.dark .cp-actions .btn-save { background: rgba(138, 180, 248, 0.16); color: #8ab4f8; }
+    body.dark .tb-btn.tb-save:hover,
+    body.dark .cp-actions .btn-save:hover { background: rgba(138, 180, 248, 0.26); filter: none; }
+    body.dark .cp-actions .btn-load { background: rgba(129, 201, 149, 0.16); color: #81c995; }
+    body.dark .cp-actions .btn-load:hover { background: rgba(129, 201, 149, 0.26); filter: none; }
+    body.dark .tb-btn.tb-reset,
+    body.dark .cp-actions .btn-reload { background: rgba(242, 139, 130, 0.14); color: #f28b82; }
+    body.dark .tb-btn.tb-reset:hover,
+    body.dark .cp-actions .btn-reload:hover { background: rgba(242, 139, 130, 0.24); filter: none; }
+    body.dark .theme-select,
+    body.dark #canvas-size-select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23bdc1c6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
     }
 
     /* ── Editable title + subtitle ── */
@@ -1370,6 +1687,7 @@
     }
 
     /* ── Zoom HUD ── */
+    /* ── Zoom HUD + Controls — same capsule language as the top bar ── */
     #zoom-hud {
       position: fixed;
       bottom: 24px;
@@ -1378,16 +1696,17 @@
       z-index: 300;
       display: flex;
       align-items: center;
-      gap: 5px;
-      background: rgba(25, 28, 30, 0.70);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      color: #fff;
+      gap: 6px;
+      background: var(--surface-white);
+      border: 1px solid var(--outline);
+      box-shadow: var(--shadow-md);
+      color: var(--on-surface);
       border-radius: var(--radius-full);
       padding: 6px 14px;
       font-family: var(--font-ui);
       font-size: var(--fs-label);
       font-weight: 600;
+      font-variant-numeric: tabular-nums;
       letter-spacing: 0.4px;
       pointer-events: none;
       opacity: 0;
@@ -1398,17 +1717,17 @@
       opacity: 1;
     }
 
-    /* ── Zoom Controls ── */
     #zoom-controls {
       position: fixed;
       bottom: 24px;
       right: 24px;
       z-index: 300;
       display: flex;
-      gap: 4px;
-      background: rgba(25, 28, 30, 0.7);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      align-items: center;
+      gap: 2px;
+      background: var(--surface-white);
+      border: 1px solid var(--outline);
+      box-shadow: var(--shadow-md);
       border-radius: var(--radius-full);
       padding: 4px;
       opacity: 0;
@@ -1422,18 +1741,34 @@
     }
 
     #zoom-controls button {
-      width: 36px;
-      height: 36px;
+      width: 34px;
+      height: 34px;
       border: none;
       border-radius: 50%;
       background: transparent;
-      color: #fff;
+      color: var(--on-surface-var);
       font-size: 0.7rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background 0.15s, transform 0.1s;
+      transition: background 0.15s, color 0.15s, transform 0.1s;
+    }
+
+    #zoom-controls button:hover {
+      background: var(--surface-mid);
+      color: var(--on-surface);
+    }
+
+    #zoom-pct {
+      min-width: 46px;
+      text-align: center;
+      font-family: var(--font-ui);
+      font-size: var(--fs-caption);
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: var(--on-surface-var);
+      pointer-events: none;
     }
 
     /* ── Add Event FAB ── */
@@ -1603,38 +1938,17 @@
       position: relative;
     }
 
-    .ev-drag-handle {
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 22px;
-      height: 18px;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      cursor: grab;
-      color: var(--on-surface-var);
-      opacity: 0.45;
-      z-index: 20;
-      font-size: 0.55rem;
-      border-radius: 4px;
-      transition: opacity 0.15s;
-    }
-
-    .ev-cell-top:hover .ev-drag-handle,
-    .ev-cell-bot:hover .ev-drag-handle {
-      display: flex;
-    }
-
-    .ev-drag-handle:hover {
-      opacity: 0.9;
+    /* กดค้างจนก้อน "ถูกยก" พร้อมลาก — เอฟเฟกต์แทนไอคอนลากแบบเดิม */
+    .drag-armed {
+      cursor: grabbing !important;
       background: var(--primary-fixed);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-md);
+      scale: 1.015;
+      transition: scale 0.12s, box-shadow 0.12s;
     }
 
-    .ev-drag-handle:active {
-      cursor: grabbing;
-    }
+    .drag-armed * { cursor: grabbing !important; }
 
     .ev-cell-top.drag-over,
     .ev-cell-bot.drag-over {
@@ -2233,7 +2547,12 @@
     <button class="tb-btn tb-icon-only" id="tb-sidebar-toggle" title="ซ่อน/แสดง Sidebar" onclick="toggleSidebar()">
       <i class="fa-solid fa-bars"></i>
     </button>
-    <span class="tb-brand">J Timeline</span>
+    <span class="tb-brand">
+      <svg class="tb-bolt" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M13.2 1.6 L4.2 13.4 L10.4 13.4 L8.6 22.4 L19.8 9.4 L12.9 9.4 Z" />
+      </svg>
+      Fast TIMELINE
+    </span>
     <div class="tb-sep"></div>
     <button class="tb-btn tb-icon-only" id="btn-undo" title="Undo (Ctrl+Z)" onclick="undo()" disabled>
       <i class="fa-solid fa-rotate-left"></i>
@@ -2281,6 +2600,9 @@
     <div class="tb-sep" id="barh-sep" style="display:none;"></div>
     <button class="tb-btn tb-icon-only" id="btn-fullscreen" title="แสดงเต็มจอ">
       <i class="fa-solid fa-expand"></i>
+    </button>
+    <button class="tb-btn tb-icon-only" id="btn-darkmode" title="สลับโหมดมืด/สว่าง" onclick="toggleUiDark()">
+      <i class="fa-solid fa-moon"></i>
     </button>
     <div class="tb-spacer"></div>
     <select id="canvas-size-select" title="ขนาด Canvas / PDF">
@@ -2370,6 +2692,7 @@
   <!-- Zoom Controls -->
   <div id="zoom-controls">
     <button id="zoom-out-btn" title="ย่อ (-)"><i class="fa-solid fa-minus"></i></button>
+    <span id="zoom-pct">100%</span>
     <button id="zoom-in-btn" title="ขยาย (+)"><i class="fa-solid fa-plus"></i></button>
   </div>
 
@@ -2417,8 +2740,22 @@
       <button onclick="toggleSidebar()" title="ปิด">&times;</button>
     </div>
 
+    <details class="cp-sec" open>
+      <summary><i class="fa-solid fa-shapes"></i> สไตล์ &amp; ธีมสี <i class="fa-solid fa-chevron-down cp-chev"></i></summary>
+      <div class="cp-sec-body">
+
     <div class="ctrl-group">
-      <span class="ctrl-label">สไตล์การแสดงผล</span>
+      <span class="ctrl-label">การจัดวาง</span>
+      <div class="ctrl-row">
+        <select id="orient-select" class="theme-select">
+          <option value="h">แนวนอน (Horizontal)</option>
+          <option value="v">แนวตั้ง (Vertical)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="ctrl-group">
+      <span class="ctrl-label">รูปแบบ Timeline</span>
       <div class="ctrl-row">
         <select id="vstyle-select" class="theme-select">
           <option value="classic">คลาสสิก (Classic)</option>
@@ -2473,6 +2810,48 @@
         <input type="color" id="gradient-icon-color" value="#00264b" title="เลือกสีไอคอน" style="display:none;">
       </div>
     </div>
+
+    <div class="ctrl-group">
+      <span class="ctrl-label">ธีมสี (Theme)</span>
+      <div class="ctrl-row">
+        <select id="theme-select" class="theme-select">
+          <optgroup label="โมเดิร์น">
+            <option value="navygold">กรม-ทอง (Navy Gold)</option>
+            <option value="nordic">นอร์ดิก (Nordic)</option>
+            <option value="mononavy">น้ำเงินไล่เฉด (Mono Navy)</option>
+            <option value="sageterra">เซจ-ดินเผา (Sage Terra)</option>
+            <option value="dusk">สนธยา (Dusk)</option>
+          </optgroup>
+          <optgroup label="คลาสสิก">
+            <option value="default">สีสันสดใส (Default)</option>
+            <option value="pastel">พาสเทล (Pastel)</option>
+            <option value="earth">เอิร์ธโทน (Earth)</option>
+            <option value="ocean">มหาสมุทร (Ocean)</option>
+            <option value="monochrome">ทางการ (Monochrome)</option>
+            <option value="vibrant">โมเดิร์นป๊อป (Vibrant)</option>
+            <option value="retro">เรโทร (Retro)</option>
+            <option value="cyber">ไซเบอร์พังก์ (Cyber)</option>
+            <option value="nature">ธรรมชาติ (Nature)</option>
+            <option value="autumn">ใบไม้ร่วง (Autumn)</option>
+          </optgroup>
+        </select>
+      </div>
+      <div id="palette-preview" title="สีของธีมที่เลือก"></div>
+    </div>
+
+    <div class="ctrl-group">
+      <div class="ctrl-label-row">
+        <span class="ctrl-label">สีกระดาษ</span>
+        <input type="color" id="canvas-bg-clr" title="สีพื้นหลัง Canvas" value="#ffffff" />
+      </div>
+    </div>
+
+      </div><!-- /cp-sec-body -->
+    </details>
+
+    <details class="cp-sec" open>
+      <summary><i class="fa-solid fa-font"></i> ตัวอักษร <i class="fa-solid fa-chevron-down cp-chev"></i></summary>
+      <div class="cp-sec-body">
 
     <div class="ctrl-group">
       <span class="ctrl-label">ฟอนต์หัวข้อ</span>
@@ -2544,31 +2923,12 @@
       </div>
     </div>
 
-    <div class="ctrl-group">
-      <span class="ctrl-label">ธีมสี (Theme)</span>
-      <div class="ctrl-row">
-        <select id="theme-select" class="theme-select">
-          <option value="default">สีสันสดใส (Default)</option>
-          <option value="pastel">พาสเทล (Pastel)</option>
-          <option value="earth">เอิร์ธโทน (Earth)</option>
-          <option value="ocean">มหาสมุทร (Ocean)</option>
-          <option value="monochrome">ทางการ (Monochrome)</option>
-          <option value="vibrant">โมเดิร์นป๊อป (Vibrant)</option>
-          <option value="retro">เรโทร (Retro)</option>
-          <option value="cyber">ไซเบอร์พังก์ (Cyber)</option>
-          <option value="nature">ธรรมชาติ (Nature)</option>
-          <option value="autumn">ใบไม้ร่วง (Autumn)</option>
-        </select>
-      </div>
-    </div>
+      </div><!-- /cp-sec-body -->
+    </details>
 
-    <div class="ctrl-group">
-      <span class="ctrl-label">สีกระดาษ</span>
-      <div class="ctrl-row">
-        <span style="flex:1; text-align:left; font-size:var(--fs-label); font-weight:500; color:var(--on-surface-var); font-family:var(--font-ui);">พื้นหลัง Canvas</span>
-        <input type="color" id="canvas-bg-clr" title="สีพื้นหลัง Canvas" value="#ffffff" />
-      </div>
-    </div>
+    <details class="cp-sec" open>
+      <summary><i class="fa-solid fa-text-height"></i> ขนาด &amp; สี <i class="fa-solid fa-chevron-down cp-chev"></i></summary>
+      <div class="cp-sec-body">
 
     <div class="ctrl-group">
       <div class="ctrl-label-row">
@@ -2658,6 +3018,13 @@
       </div>
     </div>
 
+      </div><!-- /cp-sec-body -->
+    </details>
+
+    <details class="cp-sec" open>
+      <summary><i class="fa-solid fa-image"></i> รูปภาพ &amp; ไอคอน <i class="fa-solid fa-chevron-down cp-chev"></i></summary>
+      <div class="cp-sec-body">
+
     <div class="ctrl-group">
       <div class="ctrl-label-row">
         <span class="ctrl-label">ขนาดรูปภาพ</span>
@@ -2680,6 +3047,27 @@
       </div>
     </div>
 
+    <div class="ctrl-group">
+      <div class="ctrl-label-row">
+        <span class="ctrl-label">ใช้รูปแทนไอคอน</span>
+        <label class="tgl-switch" title="แสดงรูปภาพแรกของ Event แทนไอคอนในวงกลม">
+          <input type="checkbox" id="nodeimg-toggle">
+          <span class="tgl-track"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="ctrl-group">
+      <span class="ctrl-label">รูปทรงรูปภาพ</span>
+      <div class="ctrl-row">
+        <select id="imgshape-select" class="theme-select">
+          <option value="rounded">โค้งมน (Rounded)</option>
+          <option value="circle">วงกลม (Circle)</option>
+          <option value="square">สี่เหลี่ยม (Square)</option>
+        </select>
+      </div>
+    </div>
+
     <div class="ctrl-group" style="display:none;">
       <span class="ctrl-label">คอลัมน์/แถว</span>
       <div class="ctrl-row">
@@ -2688,6 +3076,9 @@
         <button class="ctrl-btn" id="cols-up" title="เพิ่มคอลัมน์">+</button>
       </div>
     </div>
+
+      </div><!-- /cp-sec-body -->
+    </details>
 
     <div class="cp-actions">
       <button class="btn-pdf" id="btn-pdf" onclick="exportPDF()">
@@ -2887,6 +3278,9 @@
         evImgW: EV_IMG_W,
         iconScale: EV_ICON_SCALE,
         zoom: zoomLevel,
+        orient: TL_ORIENT,
+        nodeMode: NODE_MODE,
+        imgShape: IMG_SHAPE,
       };
     }
 
@@ -2920,6 +3314,10 @@
           EV_IMG_W = Math.max(EV_IMG_W_MIN, Math.min(EV_IMG_W_MAX, session.settings.evImgW));
           document.documentElement.style.setProperty('--ev-img-w', EV_IMG_W + 'px');
         }
+        /* apply layout mode ก่อน render แรก จะได้ไม่ต้อง re-render ซ้ำ */
+        if (session.settings?.orient) applyOrientation(session.settings.orient);
+        if (session.settings?.nodeMode) applyNodeMode(session.settings.nodeMode);
+        if (session.settings?.imgShape) applyImgShape(session.settings.imgShape);
 
         document.querySelector('#page-title h1').textContent = session.title || 'Timeline';
         document.querySelector('#page-title p').textContent = session.subtitle || '';
@@ -2947,6 +3345,17 @@
     }
 
     function restoreSettings(s) {
+      /* orientation / node mode ต้อง re-render ก่อน apply inline style อื่นๆ
+         (ไม่งั้น element ที่ query ด้านล่างจะเป็นชุดเก่าที่ถูกแทนที่ไปแล้ว) */
+      if (s.imgShape) applyImgShape(s.imgShape);
+      const wantOrient = s.orient || 'h';
+      const wantNode = s.nodeMode || 'icon';
+      if (wantOrient !== TL_ORIENT || wantNode !== NODE_MODE) {
+        applyNodeMode(wantNode);
+        applyOrientation(wantOrient);
+        renderTimeline();
+      }
+
       const allDesc = Array.from(document.querySelectorAll('.ev-desc'));
       const allDates = Array.from(document.querySelectorAll('.ev-date'));
       const titleH1 = document.querySelector('#page-title h1');
@@ -2965,6 +3374,7 @@
       if (s.theme && palettes[s.theme]) {
         const themeSelect = document.getElementById('theme-select');
         if (themeSelect) themeSelect.value = s.theme;
+        updatePalettePreview();
       }
       if (s.canvasSize) {
         const canvasSel = document.getElementById('canvas-size-select');
@@ -3137,9 +3547,37 @@
       autumn: [
         "#850000", "#A83219", "#D95204", "#F2780C", "#F29422",
         "#F2B807", "#F2D027", "#8C5C03", "#593602", "#BF8A26"
+      ],
+      /* ── โมเดิร์น: ชุดสีความอิ่ม/ความสว่างสม่ำเสมอ อ่านง่ายบนกระดาษขาว ── */
+      navygold: [
+        "#12315B", "#B9901F", "#3E5C76", "#8A6A1C", "#1D4E89",
+        "#6D5314", "#2B4257", "#C9A227", "#16345E", "#7A5C1C"
+      ],
+      nordic: [
+        "#5E81AC", "#BF616A", "#6E8F5A", "#B48EAD", "#D08770",
+        "#4C709A", "#A5484F", "#87A16B", "#8E6C88", "#C27B57"
+      ],
+      mononavy: [
+        "#0D2440", "#1B3A5F", "#2A507E", "#39669D", "#487CBC",
+        "#5E92D6", "#7AA8E8", "#274068", "#123152", "#356099"
+      ],
+      sageterra: [
+        "#606C38", "#BC6C25", "#4A5240", "#DDA15E", "#7C9070",
+        "#A44A3F", "#283618", "#C97B5D", "#6E7F58", "#8A5A44"
+      ],
+      dusk: [
+        "#9A6A8F", "#5F8A8B", "#C98A6B", "#7B6D8D", "#6FA087",
+        "#B57BA6", "#527970", "#A87D5F", "#8B7FA8", "#5C8D89"
       ]
     };
     let palette = palettes.default;
+
+    /* ── Live swatch strip under the theme picker ── */
+    function updatePalettePreview() {
+      const box = document.getElementById('palette-preview');
+      if (!box) return;
+      box.innerHTML = palette.map(c => `<span style="background:${c}"></span>`).join('');
+    }
 
     /* ── Gradient style: selectable color tones ── */
     const GRADIENT_PRESETS = {
@@ -3590,6 +4028,99 @@
     }
     applyIconScale(EV_ICON_SCALE);
 
+    /* ── Layout orientation + node mode + image shape ── */
+    let TL_ORIENT = 'h';       /* 'h' แนวนอน | 'v' แนวตั้ง */
+    let NODE_MODE = 'icon';    /* 'icon' | 'image' — ใช้รูปแรกของ event แทนไอคอน */
+    let IMG_SHAPE = 'rounded'; /* 'rounded' | 'circle' | 'square' */
+
+    function applyOrientation(o) {
+      TL_ORIENT = o === 'v' ? 'v' : 'h';
+      document.body.dataset.orient = TL_ORIENT;
+      const sel = document.getElementById('orient-select');
+      if (sel) sel.value = TL_ORIENT;
+      /* top-bar chips ที่มีผลเฉพาะแนวนอน (แถว / ความกว้างช่อง) */
+      const isV = TL_ORIENT === 'v';
+      ['rows-ctrl', 'rows-sep', 'spacing-ctrl'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = isV ? 'none' : (id.endsWith('sep') ? '' : 'flex');
+      });
+      /* visual styles ออกแบบมาสำหรับแนวนอน — ซ่อน select ในโหมดแนวตั้ง */
+      const vg = document.getElementById('vstyle-select')?.closest('.ctrl-group');
+      if (vg) vg.style.display = isV ? 'none' : '';
+    }
+
+    function applyNodeMode(m) {
+      NODE_MODE = m === 'image' ? 'image' : 'icon';
+      const t = document.getElementById('nodeimg-toggle');
+      if (t) t.checked = NODE_MODE === 'image';
+    }
+
+    function applyImgShape(s) {
+      IMG_SHAPE = (s === 'circle' || s === 'square') ? s : 'rounded';
+      document.body.dataset.imgshape = IMG_SHAPE;
+      const sel = document.getElementById('imgshape-select');
+      if (sel) sel.value = IMG_SHAPE;
+    }
+
+    /* ── กดค้างเพื่อลากย้าย event ได้จากทุกจุดของก้อน (ไม่มีไอคอนลากแล้ว) ──
+       กดค้าง ~0.22 วิ → "ยก" ก้อนขึ้น (draggable) แล้วลากไปวางตำแหน่งใหม่
+       - คลิก/พิมพ์ตามปกติไม่สะดุด: ปล่อยก่อนครบเวลา = คลิกธรรมดา
+       - ไม่แย่งการลากเลือกข้อความขณะกำลังแก้ไข (ช่องที่โฟกัสอยู่)
+       - ข้ามปุ่ม/ไอคอน/จุด interactive ทั้งหมด */
+    function enableHoldDrag(el) {
+      let holdTimer = null;
+      el.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        if (e.target.closest('.ev-delete-btn,.ev-img-del,.ev-img-hint,.ev-circle,button,input,select')) return;
+        const editable = e.target.closest('[contenteditable="true"]');
+        if (editable && document.activeElement === editable) return; /* กำลังแก้ข้อความอยู่ */
+        holdTimer = setTimeout(() => {
+          el.draggable = true;
+          el.classList.add('drag-armed');
+        }, 220);
+      });
+      const disarm = () => {
+        clearTimeout(holdTimer);
+        holdTimer = null;
+        /* ถ้ายังไม่ได้เริ่มลากจริง ให้วางก้อนลง (dragend จัดการกรณีลากจริง) */
+        setTimeout(() => {
+          if (!el.classList.contains('dragging')) {
+            el.draggable = false;
+            el.classList.remove('drag-armed');
+          }
+        }, 0);
+      };
+      el.addEventListener('mouseup', disarm);
+      el.addEventListener('mouseleave', () => { if (!el.draggable) { clearTimeout(holdTimer); holdTimer = null; } });
+      el.addEventListener('dragend', () => el.classList.remove('drag-armed'));
+    }
+
+    /* สร้าง .ev-circle ของ event: ไอคอน หรือรูปภาพแรก (โหมดใช้รูปแทนไอคอน) */
+    function buildEventCircle(ev, evIdx, col, evImgsAll) {
+      const circle = document.createElement('div');
+      circle.className = 'ev-circle';
+      circle.style.background = col;
+      circle.style.boxShadow = `0 4px 12px ${col}55`;
+      const useImgNode = NODE_MODE === 'image' && evImgsAll.length > 0;
+      if (useImgNode) {
+        circle.classList.add('img-node');
+        const nimg = document.createElement('img');
+        nimg.className = 'node-img';
+        nimg.src = evImgsAll[0];
+        nimg.alt = '';
+        circle.appendChild(nimg);
+        circle.title = 'คลิกเพื่อเปลี่ยนรูป';
+        circle.addEventListener('click', () => { _imgReplaceIdx = 0; _openImgPicker(evIdx); });
+      } else {
+        circle.title = 'คลิกเพื่อเปลี่ยนไอคอน';
+        circle.addEventListener('click', () => openPicker(evIdx, circle));
+        const ico = document.createElement('i');
+        ico.className = `fa-solid ${ev.icon}`;
+        circle.appendChild(ico);
+      }
+      return { circle, useImgNode };
+    }
+
     let _imgFileInput = null;
     let _imgTargetIdx = -1;
     let _imgReplaceIdx = -1;
@@ -3659,6 +4190,12 @@
       const root = document.getElementById('root');
       root.innerHTML = '';
 
+      if (TL_ORIENT === 'v') {
+        buildVerticalDOM(root);
+        renderTimelineTail();
+        return;
+      }
+
       const rows = [];
       for (let i = 0; i < allEvents.length; i += COLS) {
         rows.push(allEvents.slice(i, i + COLS));
@@ -3700,16 +4237,10 @@
           stem.className = 'ev-stem';
           stem.style.background = col;
 
-          const circle = document.createElement('div');
-          circle.className = 'ev-circle';
-          circle.style.background = col;
-          circle.style.boxShadow = `0 4px 12px ${col}55`;
-          circle.title = 'คลิกเพื่อเปลี่ยนไอคอน';
           const evIdx = r * COLS + i;
-          circle.addEventListener('click', () => openPicker(evIdx, circle));
-          const ico = document.createElement('i');
-          ico.className = `fa-solid ${ev.icon}`;
-          circle.appendChild(ico);
+          /* migrate legacy ev.img → ev.imgs */
+          const evImgsAll = ev.imgs ? ev.imgs : (ev.img ? [ev.img] : []);
+          const { circle, useImgNode } = buildEventCircle(ev, evIdx, col, evImgsAll);
 
           const dateEl = document.createElement('div');
           dateEl.className = 'ev-date';
@@ -3737,12 +4268,8 @@
           cell.style.gridRow = isAbove ? '1' : '3';
           cell.dataset.evIdx = evIdx;
 
-          /* ── Drag handle ── */
-          const dragHandle = document.createElement('div');
-          dragHandle.className = 'ev-drag-handle';
-          dragHandle.innerHTML = '<i class="fa-solid fa-grip-vertical"></i>';
-          dragHandle.title = 'ลากเพื่อย้าย';
-          dragHandle.addEventListener('mousedown', () => { cell.draggable = true; });
+          /* ── กดค้างที่ก้อนเพื่อลากย้าย ── */
+          enableHoldDrag(cell);
 
           cell.addEventListener('dragstart', (e) => {
             dragSrcIdx = evIdx;
@@ -3783,7 +4310,6 @@
           delBtn.title = 'ลบ Event นี้';
           delBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteEvent(evIdx); });
 
-          cell.appendChild(dragHandle);
           cell.appendChild(delBtn);
           cell.appendChild(stem);
           cell.appendChild(circle);
@@ -3791,9 +4317,10 @@
           cell.appendChild(timeEl);
           cell.appendChild(descEl);
 
-          /* ── Image block: supports up to EV_IMG_MAX images per event ── */
-          /* migrate legacy ev.img → ev.imgs */
-          const evImgs = ev.imgs ? ev.imgs : (ev.img ? [ev.img] : []);
+          /* ── Image block: supports up to EV_IMG_MAX images per event ──
+             เมื่อ "ใช้รูปแทนไอคอน" รูปแรกแสดงอยู่ที่ node แล้ว จึงแสดงเฉพาะรูปที่เหลือ */
+          const imgOffset = useImgNode ? 1 : 0;
+          const evImgs = evImgsAll.slice(imgOffset);
 
           const imgsOuter = document.createElement('div');
           imgsOuter.className = 'ev-imgs-outer';
@@ -3804,13 +4331,14 @@
 
             const imgEl = document.createElement('img');
             imgEl.className = 'ev-img';
+            imgEl.draggable = false; /* ให้การลากเป็นของก้อน event ไม่ใช่ตัวรูป */
             imgEl.src = src;
             imgEl.alt = '';
             imgEl.title = 'ดับเบิลคลิกเพื่อเปลี่ยนรูป';
             imgEl.addEventListener('dblclick', (e) => {
               e.stopPropagation();
-              /* replace this specific image slot */
-              _imgReplaceIdx = imgI;
+              /* replace this specific image slot (offset when node uses img #0) */
+              _imgReplaceIdx = imgI + imgOffset;
               _openImgPicker(evIdx);
             });
             imgWrap.appendChild(imgEl);
@@ -3822,7 +4350,7 @@
             imgDel.addEventListener('click', (e) => {
               e.stopPropagation();
               pushUndo();
-              const newImgs = evImgs.filter((_, j) => j !== imgI);
+              const newImgs = evImgsAll.filter((_, j) => j !== imgI + imgOffset);
               allEvents[evIdx] = { ...allEvents[evIdx], imgs: newImgs, img: '' };
               const s = gatherSettings();
               renderTimeline();
@@ -3834,7 +4362,7 @@
           });
 
           /* Show add-hint when < max images */
-          if (evImgs.length < EV_IMG_MAX) {
+          if (evImgsAll.length < EV_IMG_MAX) {
             const hint = document.createElement('div');
             hint.className = 'ev-img-hint';
             hint.title = 'ดับเบิลคลิก หรือ วางรูปภาพลงบน Event';
@@ -3848,7 +4376,7 @@
           /* dblclick anywhere on cell (except circle/handle/desc/img) → add image */
           cell.addEventListener('dblclick', (e) => {
             if (e.target.closest('.ev-circle,.ev-drag-handle,.ev-desc,.ev-img,.ev-img-del')) return;
-            if (evImgs.length >= EV_IMG_MAX) return;
+            if (evImgsAll.length >= EV_IMG_MAX) return;
             _imgReplaceIdx = -1;
             _openImgPicker(evIdx);
           });
@@ -3875,6 +4403,11 @@
         root.appendChild(section);
       });
 
+      renderTimelineTail();
+    }
+
+    /* ── Shared post-render steps (both orientations) ── */
+    function renderTimelineTail() {
       /* Show Add-Event FAB */
       const addFab = document.getElementById('btn-add-event');
       if (addFab) addFab.classList.add('visible');
@@ -3888,6 +4421,190 @@
       applyStaircaseLayout();
       recolorForVisualStyle();
       initControls();
+    }
+
+    /* ── Vertical timeline builder (แนวตั้ง): เส้นกลาง สลับซ้าย-ขวา ── */
+    function buildVerticalDOM(root) {
+      const wrap = document.createElement('div');
+      wrap.className = 'vtl-wrap';
+
+      allEvents.forEach((ev, evIdx) => {
+        const col = palette[evIdx % palette.length];
+        const isLeft = (evIdx % 2 === 0);
+        const r = Math.floor(evIdx / COLS), c = evIdx % COLS;
+
+        const item = document.createElement('div');
+        item.className = 'vtl-item ' + (isLeft ? 'vtl-left' : 'vtl-right');
+        item.dataset.evIdx = evIdx;
+
+        const seg = document.createElement('div');
+        seg.className = 'tl-bar-seg vtl-seg';
+        seg.style.background = col;
+        item.appendChild(seg);
+
+        const stem = document.createElement('div');
+        stem.className = 'ev-stem vtl-stem';
+        stem.style.background = col;
+        item.appendChild(stem);
+
+        const evImgsAll = ev.imgs ? ev.imgs : (ev.img ? [ev.img] : []);
+        const { circle, useImgNode } = buildEventCircle(ev, evIdx, col, evImgsAll);
+        const node = document.createElement('div');
+        node.className = 'vtl-node';
+        node.appendChild(circle);
+        item.appendChild(node);
+
+        const content = document.createElement('div');
+        content.className = 'vtl-content';
+
+        const dateEl = document.createElement('div');
+        dateEl.className = 'ev-date';
+        dateEl.contentEditable = 'true';
+        dateEl.dataset.id = `date-${r}-${c}`;
+        dateEl.style.color = col;
+        dateEl.textContent = ev.date;
+
+        const timeEl = document.createElement('div');
+        timeEl.className = 'ev-time';
+        timeEl.contentEditable = 'true';
+        timeEl.dataset.id = `time-${r}-${c}`;
+        timeEl.style.color = col;
+        timeEl.textContent = ev.time || '';
+
+        const descEl = document.createElement('div');
+        descEl.className = 'ev-desc';
+        descEl.contentEditable = 'true';
+        descEl.dataset.id = `desc-${r}-${c}`;
+        descEl.innerHTML = wrapNames(ev.desc);
+
+        /* ── กดค้างที่ก้อนเพื่อลากย้าย ── */
+        enableHoldDrag(item);
+
+        item.addEventListener('dragstart', (e) => {
+          dragSrcIdx = evIdx;
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', String(evIdx));
+          setTimeout(() => item.classList.add('dragging'), 0);
+        });
+        item.addEventListener('dragend', () => {
+          item.draggable = false;
+          item.classList.remove('dragging');
+          document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        });
+        item.addEventListener('dragover', (e) => {
+          if (e.dataTransfer.types.includes('Files')) {
+            e.preventDefault(); e.stopPropagation();
+            e.dataTransfer.dropEffect = 'copy';
+            item.classList.add('img-drop-over');
+            return;
+          }
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          if (evIdx !== dragSrcIdx) item.classList.add('drag-over');
+        });
+        item.addEventListener('dragleave', () => {
+          item.classList.remove('drag-over');
+          item.classList.remove('img-drop-over');
+        });
+        item.addEventListener('drop', (e) => {
+          if (e.dataTransfer.types.includes('Files')) {
+            e.preventDefault(); e.stopPropagation();
+            item.classList.remove('img-drop-over');
+            const file = [...e.dataTransfer.files].find(f => f.type.startsWith('image/'));
+            if (file) { _imgReplaceIdx = -1; _loadImgFile(file, evIdx); }
+            return;
+          }
+          e.preventDefault();
+          item.classList.remove('drag-over');
+          if (dragSrcIdx === null || dragSrcIdx === evIdx) return;
+          pushUndo();
+          const s = gatherSettings();
+          const moved = allEvents.splice(dragSrcIdx, 1)[0];
+          const target = dragSrcIdx < evIdx ? evIdx - 1 : evIdx;
+          allEvents.splice(target, 0, moved);
+          dragSrcIdx = null;
+          renderTimeline();
+          restoreSettings(s);
+          scheduleSave();
+        });
+
+        /* ── Delete button ── */
+        const delBtn = document.createElement('button');
+        delBtn.className = 'ev-delete-btn';
+        delBtn.innerHTML = '&times;';
+        delBtn.title = 'ลบ Event นี้';
+        delBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteEvent(evIdx); });
+
+        item.appendChild(delBtn);
+        content.appendChild(dateEl);
+        content.appendChild(timeEl);
+        content.appendChild(descEl);
+
+        /* ── Images (รูปแรกอยู่ที่ node แล้วเมื่อใช้รูปแทนไอคอน) ── */
+        const imgOffset = useImgNode ? 1 : 0;
+        const evImgs = evImgsAll.slice(imgOffset);
+
+        const imgsOuter = document.createElement('div');
+        imgsOuter.className = 'ev-imgs-outer';
+
+        evImgs.forEach((src, imgI) => {
+          const imgWrap = document.createElement('div');
+          imgWrap.className = 'ev-img-wrap';
+
+          const imgEl = document.createElement('img');
+          imgEl.className = 'ev-img';
+          imgEl.draggable = false; /* ให้การลากเป็นของก้อน event ไม่ใช่ตัวรูป */
+          imgEl.src = src;
+          imgEl.alt = '';
+          imgEl.title = 'ดับเบิลคลิกเพื่อเปลี่ยนรูป';
+          imgEl.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            _imgReplaceIdx = imgI + imgOffset;
+            _openImgPicker(evIdx);
+          });
+          imgWrap.appendChild(imgEl);
+
+          const imgDel = document.createElement('button');
+          imgDel.className = 'ev-img-del';
+          imgDel.innerHTML = '&times;';
+          imgDel.title = 'ลบรูป';
+          imgDel.addEventListener('click', (e) => {
+            e.stopPropagation();
+            pushUndo();
+            const newImgs = evImgsAll.filter((_, j) => j !== imgI + imgOffset);
+            allEvents[evIdx] = { ...allEvents[evIdx], imgs: newImgs, img: '' };
+            const s = gatherSettings();
+            renderTimeline();
+            restoreSettings(s);
+            scheduleSave();
+          });
+          imgWrap.appendChild(imgDel);
+          imgsOuter.appendChild(imgWrap);
+        });
+
+        if (evImgsAll.length < EV_IMG_MAX) {
+          const hint = document.createElement('div');
+          hint.className = 'ev-img-hint';
+          hint.title = 'ดับเบิลคลิก หรือ วางรูปภาพลงบน Event';
+          hint.innerHTML = '<i class="fa-solid fa-camera"></i>';
+          hint.addEventListener('click', (e) => { e.stopPropagation(); _imgReplaceIdx = -1; _openImgPicker(evIdx); });
+          imgsOuter.appendChild(hint);
+        }
+
+        content.appendChild(imgsOuter);
+        item.appendChild(content);
+
+        item.addEventListener('dblclick', (e) => {
+          if (e.target.closest('.ev-circle,.ev-drag-handle,.ev-desc,.ev-img,.ev-img-del')) return;
+          if (evImgsAll.length >= EV_IMG_MAX) return;
+          _imgReplaceIdx = -1;
+          _openImgPicker(evIdx);
+        });
+
+        wrap.appendChild(item);
+      });
+
+      root.appendChild(wrap);
     }
 
     /* ── Download Excel template ── */
@@ -4142,8 +4859,23 @@
       }
       const zoomControls = document.getElementById('zoom-controls');
       if (zoomControls) zoomControls.classList.add('visible');
+      updatePalettePreview();
       updateUndoRedoBtns();
     }
+
+    /* ── UI dark mode (chrome only — the paper stays a light document) ── */
+    function applyUiDark(on) {
+      document.body.classList.toggle('dark', !!on);
+      const ic = document.querySelector('#btn-darkmode i');
+      if (ic) ic.className = on ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+      try { localStorage.setItem('tlUiDark', on ? '1' : '0'); } catch (e) { }
+    }
+
+    function toggleUiDark() {
+      applyUiDark(!document.body.classList.contains('dark'));
+    }
+
+    try { if (localStorage.getItem('tlUiDark') === '1') applyUiDark(true); } catch (e) { }
 
     /* ── Sidebar toggle ── */
     function toggleSidebar() {
@@ -4359,6 +5091,40 @@
         vstyleSelect.onchange = (e) => { applyVisualStyle(e.target.value); scheduleSave(); };
       }
 
+      /* Orientation (แนวนอน/แนวตั้ง) */
+      const orientSel = document.getElementById('orient-select');
+      if (orientSel) {
+        orientSel.onchange = (e) => {
+          syncEventsFromDOM();
+          const s = gatherSettings();
+          applyOrientation(e.target.value);
+          s.orient = TL_ORIENT;
+          renderTimeline();
+          restoreSettings(s);
+          scheduleSave();
+        };
+      }
+
+      /* Node mode (ใช้รูปแทนไอคอน) */
+      const nodeTgl = document.getElementById('nodeimg-toggle');
+      if (nodeTgl) {
+        nodeTgl.onchange = () => {
+          syncEventsFromDOM();
+          const s = gatherSettings();
+          applyNodeMode(nodeTgl.checked ? 'image' : 'icon');
+          s.nodeMode = NODE_MODE;
+          renderTimeline();
+          restoreSettings(s);
+          scheduleSave();
+        };
+      }
+
+      /* Image shape (รูปทรงรูปภาพ) — CSS-only, no re-render needed */
+      const shapeSel = document.getElementById('imgshape-select');
+      if (shapeSel) {
+        shapeSel.onchange = (e) => { applyImgShape(e.target.value); scheduleSave(); };
+      }
+
       /* Gradient tone picker (only relevant to the Gradient visual style) */
       const gradientToneSelect = document.getElementById('gradient-tone-select');
       if (gradientToneSelect) {
@@ -4392,6 +5158,7 @@
           palette = palettes[e.target.value] || palettes.default;
           renderTimeline();
           restoreSettings(currentSettings);
+          updatePalettePreview();
           scheduleSave();
         };
       }
@@ -4674,6 +5441,62 @@
           return { l: r.left, t: r.top, r: r.right, b: r.bottom, w: r.width, h: r.height };
         };
 
+        const MM2PT = 72 / 25.4;   /* mm → PDF internal points */
+
+        /*
+         * Clip path ตามรูปทรง (rect / rounded / circle) — เขียนตรงลง PDF
+         * stream (พิกัด pt, แกน y ชี้ขึ้น) แล้วปิดด้วย `W n`
+         */
+        const writeShapeClip = (x, y, w, h, shape, radMM) => {
+          const X0 = x * MM2PT, W = w * MM2PT, H = h * MM2PT;
+          const Y0 = (pdfActualH - y - h) * MM2PT;
+          const f = n => n.toFixed(3);
+          const k = 0.552284749;
+          if (shape === 'circle') {
+            const cx = X0 + W / 2, cy = Y0 + H / 2, rx = W / 2, ry = H / 2;
+            pdf.internal.write(
+              `${f(cx + rx)} ${f(cy)} m ` +
+              `${f(cx + rx)} ${f(cy + ry * k)} ${f(cx + rx * k)} ${f(cy + ry)} ${f(cx)} ${f(cy + ry)} c ` +
+              `${f(cx - rx * k)} ${f(cy + ry)} ${f(cx - rx)} ${f(cy + ry * k)} ${f(cx - rx)} ${f(cy)} c ` +
+              `${f(cx - rx)} ${f(cy - ry * k)} ${f(cx - rx * k)} ${f(cy - ry)} ${f(cx)} ${f(cy - ry)} c ` +
+              `${f(cx + rx * k)} ${f(cy - ry)} ${f(cx + rx)} ${f(cy - ry * k)} ${f(cx + rx)} ${f(cy)} c ` +
+              `W n`);
+          } else if (shape === 'rounded') {
+            const rr = Math.min((radMM || 0) * MM2PT, W / 2, H / 2);
+            const rk = rr * k;
+            pdf.internal.write(
+              `${f(X0 + rr)} ${f(Y0)} m ` +
+              `${f(X0 + W - rr)} ${f(Y0)} l ` +
+              `${f(X0 + W - rr + rk)} ${f(Y0)} ${f(X0 + W)} ${f(Y0 + rr - rk)} ${f(X0 + W)} ${f(Y0 + rr)} c ` +
+              `${f(X0 + W)} ${f(Y0 + H - rr)} l ` +
+              `${f(X0 + W)} ${f(Y0 + H - rr + rk)} ${f(X0 + W - rr + rk)} ${f(Y0 + H)} ${f(X0 + W - rr)} ${f(Y0 + H)} c ` +
+              `${f(X0 + rr)} ${f(Y0 + H)} l ` +
+              `${f(X0 + rr - rk)} ${f(Y0 + H)} ${f(X0)} ${f(Y0 + H - rr + rk)} ${f(X0)} ${f(Y0 + H - rr)} c ` +
+              `${f(X0)} ${f(Y0 + rr)} l ` +
+              `${f(X0)} ${f(Y0 + rr - rk)} ${f(X0 + rr - rk)} ${f(Y0)} ${f(X0 + rr)} ${f(Y0)} c ` +
+              `W n`);
+          } else {
+            pdf.internal.write(`${f(X0)} ${f(Y0)} ${f(W)} ${f(H)} re W n`);
+          }
+        };
+
+        /* วาด <img> แบบ object-fit:cover ภายใน clip รูปทรงที่กำหนด (mm) */
+        const drawCoverImage = (imgEl, x, y, w, h, shape, radMM) => {
+          const src = imgEl.currentSrc || imgEl.src;
+          if (!src || !src.startsWith('data:')) return; /* embed ได้เฉพาะ data URL */
+          const nw = imgEl.naturalWidth, nh = imgEl.naturalHeight;
+          if (!nw || !nh || w < 0.5 || h < 0.5) return;
+          let dw = w, dh = h, dx = x, dy = y;
+          const boxAR = w / h, imgAR = nw / nh;
+          if (imgAR > boxAR) { dw = h * imgAR; dx = x - (dw - w) / 2; }
+          else { dh = w / imgAR; dy = y - (dh - h) / 2; }
+          pdf.saveGraphicsState();
+          writeShapeClip(x, y, w, h, shape, radMM);
+          try { pdf.addImage(src, dx, dy, dw, dh); }
+          catch (err) { console.warn('PDF addImage failed:', err); }
+          pdf.restoreGraphicsState();
+        };
+
         /* ── Collect rendered text lines via Range API (natural positions) ── */
         function getRenderedLines(el) {
           const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
@@ -4687,7 +5510,25 @@
             for (let i = 0; i < nd.textContent.length; i++) {
               range.setStart(nd, i);
               range.setEnd(nd, i + 1);
-              const rc = range.getBoundingClientRect();
+              /*
+               * WebKit/Safari: the character that starts a soft-wrapped line
+               * (mid-word break — very common in Thai) reports TWO client
+               * rects: a collapsed one at the end of the previous line plus
+               * the real one on the new line. getBoundingClientRect() unions
+               * them into a box spanning both lines, which used to glue the
+               * character onto the previous line's group and inflate that
+               * group's bottom — pushing its computed baseline a full line
+               * down and overlapping the next line in the PDF.
+               * Use the LAST rect with real width/height: that is where the
+               * glyph is actually painted (Chromium returns just that rect).
+               */
+              let rc = range.getBoundingClientRect();
+              const rcs = range.getClientRects();
+              if (rcs.length > 1) {
+                for (let k = rcs.length - 1; k >= 0; k--) {
+                  if (rcs[k].width > 0.1 && rcs[k].height > 0.1) { rc = rcs[k]; break; }
+                }
+              }
               if (!rc.width && !rc.height) continue;
               if (curTop === null || rc.top > curTop + 3) {
                 if (cur && cur.text.trim()) lines.push(cur);
@@ -4712,7 +5553,7 @@
         /* ── Create jsPDF document ── */
         const dimA = Math.max(pdfW, pdfH);
         const dimB = Math.min(pdfW, pdfH);
-        const pdf  = new jsPDF({ unit: 'mm', format: [dimA, dimB], orientation: 'landscape' });
+        const pdf  = new jsPDF({ unit: 'mm', format: [dimA, dimB], orientation: pdfH > pdfW ? 'portrait' : 'landscape' });
         const pdfActualW = pdf.internal.pageSize.getWidth();
         const pdfActualH = pdf.internal.pageSize.getHeight();
 
@@ -4789,13 +5630,19 @@
           pdf.rect(X(a.l), Y(a.t), Math.max(M(a.w), 0.4), M(a.h), 'F');
         });
 
-        /* Circles + FontAwesome icons */
+        /* Circles + FontAwesome icons (หรือรูปภาพ เมื่อใช้รูปแทนไอคอน) */
         rEl.querySelectorAll('.ev-circle').forEach(el => {
           const a  = abr(el);
           const cx = X(a.l + a.w / 2);
           const cy = Y(a.t + a.h / 2);
           const r  = M(a.w / 2);
           if (r < 0.1) return;
+          const nimg = el.querySelector('img.node-img');
+          if (nimg) {
+            /* node รูปภาพใช้รูปทรงตามที่เลือก (วงกลม/โค้งมน/สี่เหลี่ยม) */
+            drawCoverImage(nimg, X(a.l), Y(a.t), M(a.w), M(a.h), IMG_SHAPE, M(a.w) * 0.18);
+            return;
+          }
           pdf.setFillColor(...cssRGB(getComputedStyle(el).backgroundColor));
           pdf.circle(cx, cy, r, 'F');
           const ico = el.querySelector('i');
@@ -4835,7 +5682,6 @@
          * pdfActualH (mm) − cy (mm from top) − ch (mm height) = bottom-left y.
          * Multiply by MM2PT to get PDF stream units (points).
          */
-        const MM2PT = 72 / 25.4;   /* mm → PDF internal points */
         rEl.querySelectorAll('.ev-desc').forEach(el => {
           const a  = abr(el);
           const cx = X(a.l);
@@ -4851,6 +5697,13 @@
           pdf.internal.write(`${xp} ${yp} ${wp} ${hp} re W n`);
           drawEl(el, 'normal');
           pdf.restoreGraphicsState();
+        });
+
+        /* ── Event images — clip ตามรูปทรงที่เลือก (โค้งมน/วงกลม/สี่เหลี่ยม) ── */
+        rEl.querySelectorAll('.ev-img').forEach(el => {
+          const a = abr(el);
+          if (a.w < 1 || a.h < 1) return;
+          drawCoverImage(el, X(a.l), Y(a.t), M(a.w), M(a.h), IMG_SHAPE, M(6));
         });
 
         /* Save */
@@ -5195,6 +6048,8 @@
     function _updateZoomHUD() {
       const hud = document.getElementById('zoom-hud');
       const val = document.getElementById('zoom-val');
+      const pct = document.getElementById('zoom-pct');
+      if (pct) pct.textContent = Math.round(zoomLevel * 100) + '%';
       if (hud && val) {
         val.textContent = Math.round(zoomLevel * 100) + '%';
         hud.classList.add('visible');
