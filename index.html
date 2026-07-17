@@ -1393,6 +1393,13 @@
 
     .theme-select {
       flex: 1;
+      /* flex item หดต่ำกว่า min-content ไม่ได้โดย default — บังคับให้หดตามกรอบ
+         แล้วตัดข้อความที่ยาวเกินด้วย ellipsis แทนการดันกล่องล้น */
+      min-width: 0;
+      width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       padding: 7px 26px 7px 10px;
       border: 1px solid var(--outline);
       border-radius: var(--radius-sm);
@@ -4303,8 +4310,11 @@
         const sup = VSTYLE_V_SUPPORT[op.value] || 'ok';
         const blocked = isV && sup === 'no';
         op.disabled = blocked;
+        /* ป้ายกำกับสั้นๆ กันข้อความยาวจนดันกล่อง select ล้นกรอบ
+           (รายละเอียดเต็มแจ้งผ่าน toast อยู่แล้ว) */
         op.textContent = op.dataset.base
-          + (blocked ? ' — แนวนอนเท่านั้น' : (isV && sup === 'partial' ? ' (แนวตั้งอาจไม่สมบูรณ์)' : ''));
+          + (blocked ? ' 🚫' : (isV && sup === 'partial' ? ' ⚠️' : ''));
+        if (blocked) op.title = 'ใช้ได้เฉพาะแนวนอน';
       });
     }
 
