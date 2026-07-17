@@ -610,6 +610,17 @@
       flex-wrap: wrap;
       justify-content: center;
       flex-shrink: 0;
+      position: relative;
+    }
+
+    /* เมื่อมีรูปแล้ว ปุ่มกล้อง (เพิ่มรูป) ต้องไม่กินพื้นที่ layout —
+       ไม่งั้นรูปเดี่ยวจะถูกดันออกจากแกนกลางของ event ให้ลอยชิดขวาแทน */
+    .ev-imgs-outer:has(.ev-img-wrap) .ev-img-hint {
+      position: absolute;
+      left: 100%;
+      top: 50%;
+      transform: translateY(-50%);
+      margin-left: 2px;
     }
 
     .ev-img-wrap {
@@ -837,6 +848,7 @@
       border: 1px solid var(--outline);
       border-radius: var(--radius-full);
       box-shadow: var(--shadow-md);
+      color: var(--on-surface); /* ให้ลูกที่ไม่กำหนดสีเองตามธีมเสมอ */
       display: none;
       align-items: center;
       gap: 5px;
@@ -950,6 +962,11 @@
       pointer-events: none;
     }
 
+    /* โหมดมืด: ปุ่ม disabled จางเกินไปบนพื้นเข้ม — เพิ่มความชัดขึ้นเล็กน้อย */
+    body.dark .tb-btn:disabled {
+      opacity: 0.5;
+    }
+
     .tb-btn.tb-pdf {
       background: #fef7e0;
       color: #9a6700;
@@ -1011,15 +1028,19 @@
       flex-direction: column;
       align-items: center;
       min-width: 32px;
+      /* สีจาก token เสมอ — ห้ามปล่อย inherit เป็นดำ ไม่งั้นมองไม่เห็นในโหมดมืด */
+      color: var(--on-surface);
     }
     .tb-spacing-label {
       font-size: var(--fs-micro);
-      opacity: 0.7;
+      color: var(--on-surface-var);
+      opacity: 0.85;
       font-weight: 500;
     }
     .tb-spacing-icon {
       font-size: 0.8rem;
       line-height: 1;
+      color: var(--on-surface);
     }
 
     /* ── Rows control (จำนวนแถวเส้นเวลา) ── */
@@ -1938,6 +1959,197 @@
       position: relative;
     }
 
+    /* ══ Toast แจ้งเตือน ══ */
+    #app-toast {
+      position: fixed;
+      bottom: 76px;
+      left: 50%;
+      transform: translateX(-50%) translateY(8px);
+      z-index: 430;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      max-width: min(560px, 86vw);
+      background: var(--surface-white);
+      border: 1px solid var(--outline);
+      box-shadow: var(--shadow-lg);
+      color: var(--on-surface);
+      border-radius: var(--radius-full);
+      padding: 10px 18px;
+      font-family: var(--font-ui);
+      font-size: var(--fs-label);
+      font-weight: 600;
+      line-height: 1.45;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s, transform 0.22s;
+    }
+
+    #app-toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    #app-toast i {
+      color: #f0a11c;
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+
+    /* ══ เมนูคลิกขวาของ event ══ */
+    #ev-ctx-menu {
+      position: fixed;
+      z-index: 420;
+      display: none;
+      flex-direction: column;
+      min-width: 235px;
+      background: var(--surface-white);
+      border: 1px solid var(--outline);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      padding: 6px;
+      font-family: var(--font-ui);
+    }
+
+    .ctx-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 9px 12px;
+      border: none;
+      background: transparent;
+      color: var(--on-surface);
+      font-family: var(--font-ui);
+      font-size: var(--fs-label);
+      font-weight: 500;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.12s;
+      white-space: nowrap;
+    }
+
+    .ctx-item i {
+      width: 16px;
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--on-surface-var);
+    }
+
+    .ctx-item:hover { background: var(--surface-mid); }
+
+    .ctx-item:disabled {
+      opacity: 0.4;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .ctx-item.ctx-danger,
+    .ctx-item.ctx-danger i { color: #c5221f; }
+
+    .ctx-item.ctx-danger:hover { background: rgba(197, 34, 31, 0.08); }
+
+    body.dark .ctx-item.ctx-danger,
+    body.dark .ctx-item.ctx-danger i { color: #f28b82; }
+
+    body.dark .ctx-item.ctx-danger:hover { background: rgba(242, 139, 130, 0.12); }
+
+    .ctx-sep {
+      height: 1px;
+      background: var(--outline);
+      margin: 5px 8px;
+    }
+
+    /* ══ โหมดจัดเรียง (iPhone-style wiggle) ══ */
+    @keyframes ev-wiggle {
+      0%   { rotate: -0.7deg; }
+      50%  { rotate: 0.8deg; }
+      100% { rotate: -0.7deg; }
+    }
+
+    body.reorder-mode .ev-cell-top,
+    body.reorder-mode .ev-cell-bot,
+    body.reorder-mode .vtl-item {
+      animation: ev-wiggle 0.4s ease-in-out infinite;
+      cursor: grab;
+    }
+
+    /* สลับจังหวะสั่นให้ดูเป็นธรรมชาติแบบ iPhone */
+    body.reorder-mode .ev-cell-top:nth-of-type(2n),
+    body.reorder-mode .ev-cell-bot:nth-of-type(2n),
+    body.reorder-mode .vtl-item:nth-of-type(2n) {
+      animation-delay: -0.2s;
+    }
+
+    body.reorder-mode .ev-cell-top:active,
+    body.reorder-mode .ev-cell-bot:active,
+    body.reorder-mode .vtl-item:active {
+      cursor: grabbing;
+    }
+
+    /* ปิด interaction อื่นทั้งหมด — ทั้งก้อนเป็นพื้นที่ลากล้วนๆ
+       (ยกเว้นปุ่มลบที่โชว์ค้างแบบ badge ของ iPhone) */
+    body.reorder-mode #root .ev-circle,
+    body.reorder-mode #root .ev-imgs-outer,
+    body.reorder-mode #root [contenteditable] {
+      pointer-events: none;
+    }
+
+    body.reorder-mode #root .ev-delete-btn {
+      display: flex;
+      pointer-events: auto;
+    }
+
+    /* Hint pill กลางล่างขณะอยู่ในโหมด */
+    #reorder-hint {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 320;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      background: var(--surface-white);
+      border: 1px solid var(--outline);
+      box-shadow: var(--shadow-md);
+      color: var(--on-surface);
+      border-radius: var(--radius-full);
+      padding: 8px 10px 8px 16px;
+      font-family: var(--font-ui);
+      font-size: var(--fs-label);
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    #reorder-hint.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #reorder-hint i {
+      font-size: 0.7rem;
+      color: var(--primary);
+    }
+
+    #reorder-hint button {
+      border: none;
+      border-radius: var(--radius-full);
+      background: var(--primary);
+      color: var(--surface-white);
+      font-family: var(--font-ui);
+      font-size: var(--fs-label);
+      font-weight: 700;
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: filter 0.15s;
+    }
+
+    #reorder-hint button:hover { filter: brightness(1.15); }
+
     /* กดค้างจนก้อน "ถูกยก" พร้อมลาก — เอฟเฟกต์แทนไอคอนลากแบบเดิม */
     .drag-armed {
       cursor: grabbing !important;
@@ -2319,6 +2531,12 @@
       background: transparent !important;
     }
 
+    /* แนวตั้ง: เส้นแกนกลางคือ segment เอง ต้องไม่โดนซ่อน —
+       recolorForVisualStyle ลงสีไล่เฉดผ่านตัวแปรนี้ให้ตรงโทน gradient */
+    body[data-vstyle="gradient"] .vtl-seg {
+      background: var(--vtl-seg-color, var(--outline)) !important;
+    }
+
     body[data-vstyle="gradient"] .ev-circle {
       border: 3px solid var(--surface-white);
       box-shadow: 0 3px 10px rgba(25, 28, 30, 0.2);
@@ -2564,6 +2782,10 @@
     <button class="tb-btn" onclick="openAddEventModal()" title="เพิ่ม Event ใหม่">
       <i class="fa-solid fa-plus"></i> เพิ่ม Event
     </button>
+    <button class="tb-btn" id="btn-reorder" onclick="toggleReorderMode()"
+      title="โหมดจัดเรียง — ลากสลับตำแหน่ง Event (หรือคลิกขวาที่ Event)">
+      <i class="fa-solid fa-up-down-left-right"></i> จัดเรียง
+    </button>
     <div class="tb-sep" id="rows-sep" style="display:none;"></div>
     <div class="tb-rows-ctrl tb-chip" id="rows-ctrl" style="display:none;" title="จำนวนแถวเส้นเวลา">
       <button class="tb-btn tb-icon-only tb-chip-btn" id="rows-dn" title="ลดแถว"><i class="fa-solid fa-minus"></i></button>
@@ -2682,6 +2904,19 @@
   <button id="btn-add-event" onclick="openAddEventModal()" title="เพิ่ม Event ใหม่" style="display:none!important">
     <i class="fa-solid fa-plus"></i>
   </button>
+
+  <!-- Event context menu (คลิกขวา) -->
+  <div id="ev-ctx-menu"></div>
+
+  <!-- Toast แจ้งเตือน -->
+  <div id="app-toast"></div>
+
+  <!-- Reorder mode hint -->
+  <div id="reorder-hint">
+    <i class="fa-solid fa-up-down-left-right"></i>
+    โหมดจัดเรียง — ลาก Event ไปวางตำแหน่งใหม่ได้เลย
+    <button onclick="setReorderMode(false)">เสร็จสิ้น</button>
+  </div>
 
   <!-- Zoom HUD -->
   <div id="zoom-hud">
@@ -3670,6 +3905,12 @@
       document.querySelectorAll('#root .ev-dot').forEach((el, idx) => {
         el.style.borderColor = colorAt(idx);
       });
+      /* เส้นแกนกลางแนวตั้ง — ตามโทนสีของสไตล์ (gradient/palette) เสมอ */
+      document.querySelectorAll('#root .vtl-seg').forEach((el, idx) => {
+        const c = colorAt(idx);
+        el.style.background = c;
+        el.style.setProperty('--vtl-seg-color', c);
+      });
       document.querySelectorAll('#root .ev-date').forEach((el, idx) => {
         el.style.color = colorAt(idx);
       });
@@ -4025,6 +4266,8 @@
       if (val) val.textContent = Math.round(EV_ICON_SCALE * 100) + '%';
       const sl = document.getElementById('iconsize-slider');
       if (sl) sl.value = EV_ICON_SCALE;
+      /* margin ของวงกลมเปลี่ยนตาม scale → จัดก้านแนวตั้งใหม่ */
+      if (typeof alignVerticalStems === 'function') alignVerticalStems();
     }
     applyIconScale(EV_ICON_SCALE);
 
@@ -4032,6 +4275,38 @@
     let TL_ORIENT = 'h';       /* 'h' แนวนอน | 'v' แนวตั้ง */
     let NODE_MODE = 'icon';    /* 'icon' | 'image' — ใช้รูปแรกของ event แทนไอคอน */
     let IMG_SHAPE = 'rounded'; /* 'rounded' | 'circle' | 'square' */
+
+    /* ── ความเข้ากันได้ของ visual style กับ timeline แนวตั้ง ──
+       'ok'      ใช้ได้เต็มรูปแบบ
+       'partial' ใช้ได้แต่บางลูกเล่นอาจไม่ครบ (ออกแบบมาอิงแถบแนวนอน)
+       'no'      โครงสร้างผูกกับแถบ/คอลัมน์แนวนอน — บล็อกและถอยเป็นคลาสสิก */
+    const VSTYLE_V_SUPPORT = {
+      classic: 'ok', cards: 'ok', minimal: 'ok', bold: 'ok', diamond: 'ok',
+      hexagon: 'ok', glass: 'ok', pill: 'ok', compact: 'ok',
+      neon: 'partial', gradient: 'partial', flag: 'partial',
+      pin: 'no', chevron: 'no', staircase: 'no',
+    };
+    let _prevHVstyle = null; /* สไตล์เดิมของผู้ใช้ ไว้คืนให้ตอนกลับแนวนอน */
+
+    function vstyleLabel(v) {
+      const op = document.querySelector(`#vstyle-select option[value="${v}"]`);
+      return op ? (op.dataset.base || op.textContent).trim() : v;
+    }
+
+    /* ทำเครื่องหมาย/ปิด option ของสไตล์ตาม orientation ปัจจุบัน */
+    function updateVstyleOptionsForOrientation() {
+      const sel = document.getElementById('vstyle-select');
+      if (!sel) return;
+      const isV = TL_ORIENT === 'v';
+      [...sel.options].forEach(op => {
+        if (!op.dataset.base) op.dataset.base = op.textContent;
+        const sup = VSTYLE_V_SUPPORT[op.value] || 'ok';
+        const blocked = isV && sup === 'no';
+        op.disabled = blocked;
+        op.textContent = op.dataset.base
+          + (blocked ? ' — แนวนอนเท่านั้น' : (isV && sup === 'partial' ? ' (แนวตั้งอาจไม่สมบูรณ์)' : ''));
+      });
+    }
 
     function applyOrientation(o) {
       TL_ORIENT = o === 'v' ? 'v' : 'h';
@@ -4044,9 +4319,19 @@
         const el = document.getElementById(id);
         if (el) el.style.display = isV ? 'none' : (id.endsWith('sep') ? '' : 'flex');
       });
-      /* visual styles ออกแบบมาสำหรับแนวนอน — ซ่อน select ในโหมดแนวตั้ง */
-      const vg = document.getElementById('vstyle-select')?.closest('.ctrl-group');
-      if (vg) vg.style.display = isV ? 'none' : '';
+
+      updateVstyleOptionsForOrientation();
+      const cur = document.body.dataset.vstyle || 'classic';
+      if (isV) {
+        /* สไตล์ที่ใช้ไม่ได้ → applyVisualStyle จะถอยเป็นคลาสสิก + เตือนเอง
+           สไตล์ partial → เตือนว่าอาจไม่สมบูรณ์ */
+        applyVisualStyle(cur);
+      } else if (_prevHVstyle) {
+        const back = _prevHVstyle;
+        _prevHVstyle = null;
+        applyVisualStyle(back);
+        showToast(`กลับเป็นแนวนอน — คืนสไตล์ "${vstyleLabel(back)}" ให้แล้ว`);
+      }
     }
 
     function applyNodeMode(m) {
@@ -4061,16 +4346,137 @@
       const sel = document.getElementById('imgshape-select');
       if (sel) sel.value = IMG_SHAPE;
     }
+    applyImgShape(IMG_SHAPE); /* ให้ body[data-imgshape] ตรงกับ select ตั้งแต่โหลดแรก */
 
     /* ── กดค้างเพื่อลากย้าย event ได้จากทุกจุดของก้อน (ไม่มีไอคอนลากแล้ว) ──
        กดค้าง ~0.22 วิ → "ยก" ก้อนขึ้น (draggable) แล้วลากไปวางตำแหน่งใหม่
        - คลิก/พิมพ์ตามปกติไม่สะดุด: ปล่อยก่อนครบเวลา = คลิกธรรมดา
        - ไม่แย่งการลากเลือกข้อความขณะกำลังแก้ไข (ช่องที่โฟกัสอยู่)
        - ข้ามปุ่ม/ไอคอน/จุด interactive ทั้งหมด */
+    /* ── โหมดจัดเรียง (iPhone-style wiggle mode) ──
+       เข้า: คลิกขวาที่ event / ปุ่ม "จัดเรียง" บน top bar
+       ออก: Esc, คลิกขวาซ้ำ, หรือกดปุ่มเดิมอีกครั้ง
+       ระหว่างอยู่ในโหมด: ทุกก้อนสั่น + ลากได้ทันที + ปุ่มลบโชว์ค้าง
+       + ปิด contenteditable ชั่วคราว (กันลากไปโดนแก้ข้อความ) */
+    let REORDER_MODE = false;
+
+    function setReorderMode(on) {
+      REORDER_MODE = !!on;
+      document.body.classList.toggle('reorder-mode', REORDER_MODE);
+      document.querySelectorAll('#root .ev-cell-top, #root .ev-cell-bot, #root .vtl-item').forEach(el => {
+        el.draggable = REORDER_MODE;
+      });
+      document.querySelectorAll('#root [contenteditable]').forEach(el => {
+        el.contentEditable = REORDER_MODE ? 'false' : 'true';
+      });
+      const btn = document.getElementById('btn-reorder');
+      if (btn) btn.classList.toggle('active', REORDER_MODE);
+      const hint = document.getElementById('reorder-hint');
+      if (hint) hint.classList.toggle('visible', REORDER_MODE);
+    }
+
+    function toggleReorderMode() { setReorderMode(!REORDER_MODE); }
+
+    /* ── เมนูคลิกขวาของ event ── */
+    function clearEventImages(evIdx) {
+      pushUndo();
+      allEvents[evIdx] = { ...allEvents[evIdx], imgs: [], img: '' };
+      const s = gatherSettings();
+      renderTimeline();
+      restoreSettings(s);
+      scheduleSave();
+    }
+
+    function duplicateEvent(evIdx) {
+      pushUndo(); /* sync ข้อความล่าสุดจาก DOM เข้า allEvents ให้แล้ว */
+      const src = allEvents[evIdx];
+      const copy = { ...src, imgs: src.imgs ? [...src.imgs] : [] };
+      allEvents.splice(evIdx + 1, 0, copy);
+      const s = gatherSettings();
+      renderTimeline();
+      restoreSettings(s);
+      scheduleSave();
+    }
+
+    function hideEventContextMenu() {
+      const m = document.getElementById('ev-ctx-menu');
+      if (m) m.style.display = 'none';
+    }
+
+    function showEventContextMenu(x, y, evIdx) {
+      const menu = document.getElementById('ev-ctx-menu');
+      if (!menu || Number.isNaN(evIdx)) return;
+      const ev = allEvents[evIdx];
+      const hasImgs = !!(ev && ((ev.imgs && ev.imgs.length) || ev.img));
+      menu.innerHTML = '';
+
+      const add = (icon, label, fn, cls) => {
+        const it = document.createElement('button');
+        it.className = 'ctx-item' + (cls ? ' ' + cls : '');
+        it.innerHTML = `<i class="fa-solid ${icon}"></i><span>${label}</span>`;
+        it.addEventListener('click', () => { hideEventContextMenu(); fn(); });
+        menu.appendChild(it);
+        return it;
+      };
+      const sep = () => {
+        const d = document.createElement('div');
+        d.className = 'ctx-sep';
+        menu.appendChild(d);
+      };
+
+      add('fa-up-down-left-right',
+        REORDER_MODE ? 'ออกจากโหมดจัดเรียง' : 'โหมดจัดเรียง (ลากสลับตำแหน่ง)',
+        () => toggleReorderMode());
+      sep();
+      add('fa-icons', 'เปลี่ยนไอคอน', () => {
+        const c = document.querySelector(`[data-ev-idx="${evIdx}"] .ev-circle`);
+        openPicker(evIdx, c || document.body);
+      });
+      add('fa-image', 'เพิ่มรูปภาพ', () => { _imgReplaceIdx = -1; _openImgPicker(evIdx); });
+      const clearIt = add('fa-broom', 'ล้างรูปทั้งหมดของ Event นี้', () => clearEventImages(evIdx));
+      if (!hasImgs) clearIt.disabled = true;
+      sep();
+      add('fa-copy', 'ทำสำเนา Event นี้', () => duplicateEvent(evIdx));
+      add('fa-plus', 'เพิ่ม Event ใหม่', () => openAddEventModal());
+      sep();
+      add('fa-trash-can', 'ลบ Event นี้', () => deleteEvent(evIdx), 'ctx-danger');
+
+      /* แสดงก่อนวัดขนาด แล้ว clamp ไม่ให้ล้นขอบจอ */
+      menu.style.display = 'flex';
+      menu.style.left = '0px';
+      menu.style.top = '0px';
+      const r = menu.getBoundingClientRect();
+      menu.style.left = Math.max(8, Math.min(x, innerWidth - r.width - 8)) + 'px';
+      menu.style.top = Math.max(8, Math.min(y, innerHeight - r.height - 8)) + 'px';
+    }
+
+    document.addEventListener('contextmenu', (e) => {
+      const cell = e.target.closest('.ev-cell-top, .ev-cell-bot, .vtl-item');
+      if (!cell) { hideEventContextMenu(); return; }
+      /* ขณะพิมพ์อยู่ในช่องข้อความ ปล่อยเมนู native (copy/paste) ทำงานตามเดิม */
+      const editable = e.target.closest('[contenteditable="true"]');
+      if (editable && document.activeElement === editable) return;
+      e.preventDefault();
+      showEventContextMenu(e.clientX, e.clientY, parseInt(cell.dataset.evIdx, 10));
+    });
+
+    document.addEventListener('mousedown', (e) => {
+      if (!e.target.closest('#ev-ctx-menu')) hideEventContextMenu();
+    });
+    document.addEventListener('wheel', () => hideEventContextMenu(), { passive: true });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        hideEventContextMenu();
+        if (REORDER_MODE) setReorderMode(false);
+      }
+    });
+
     function enableHoldDrag(el) {
       let holdTimer = null;
       el.addEventListener('mousedown', (e) => {
         if (e.button !== 0) return;
+        if (REORDER_MODE) return; /* ในโหมดจัดเรียง ลากได้ทันทีอยู่แล้ว */
         if (e.target.closest('.ev-delete-btn,.ev-img-del,.ev-img-hint,.ev-circle,button,input,select')) return;
         const editable = e.target.closest('[contenteditable="true"]');
         if (editable && document.activeElement === editable) return; /* กำลังแก้ข้อความอยู่ */
@@ -4278,7 +4684,7 @@
             setTimeout(() => cell.classList.add('dragging'), 0);
           });
           cell.addEventListener('dragend', () => {
-            cell.draggable = false;
+            cell.draggable = REORDER_MODE; /* ในโหมดจัดเรียงต้องลากต่อได้ */
             cell.classList.remove('dragging');
             document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
           });
@@ -4420,7 +4826,11 @@
 
       applyStaircaseLayout();
       recolorForVisualStyle();
+      alignVerticalStems();
       initControls();
+
+      /* คงโหมดจัดเรียงไว้ข้าม re-render (เช่น หลังปล่อยวาง 1 ครั้ง) */
+      if (REORDER_MODE) setReorderMode(true);
     }
 
     /* ── Vertical timeline builder (แนวตั้ง): เส้นกลาง สลับซ้าย-ขวา ── */
@@ -4487,7 +4897,7 @@
           setTimeout(() => item.classList.add('dragging'), 0);
         });
         item.addEventListener('dragend', () => {
-          item.draggable = false;
+          item.draggable = REORDER_MODE; /* ในโหมดจัดเรียงต้องลากต่อได้ */
           item.classList.remove('dragging');
           document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
         });
@@ -4706,16 +5116,71 @@
     });
 
     /* ── Visual style system ── */
+    let _lastVstyleWarnKey = ''; /* กันเตือนซ้ำๆ เมื่อ style/orientation ไม่ได้เปลี่ยนจริง */
+
     function applyVisualStyle(name) {
-      document.body.dataset.vstyle = name || 'classic';
+      name = name || 'classic';
+
+      /* แนวตั้ง: สไตล์ที่โครงสร้างผูกกับแถบแนวนอน → บล็อกและถอยเป็นคลาสสิก */
+      if (TL_ORIENT === 'v' && (VSTYLE_V_SUPPORT[name] || 'ok') === 'no') {
+        if (!_prevHVstyle) _prevHVstyle = name;
+        const warnKey = 'v-no:' + name;
+        if (warnKey !== _lastVstyleWarnKey) {
+          showToast(`สไตล์ "${vstyleLabel(name)}" ใช้ได้เฉพาะแนวนอน — ใช้คลาสสิกแทนชั่วคราว (จะคืนให้เมื่อกลับแนวนอน)`);
+          _lastVstyleWarnKey = warnKey;
+        }
+        name = 'classic';
+      } else if (TL_ORIENT === 'v' && (VSTYLE_V_SUPPORT[name] || 'ok') === 'partial') {
+        const warnKey = 'v-partial:' + name;
+        if (warnKey !== _lastVstyleWarnKey) {
+          showToast(`สไตล์ "${vstyleLabel(name)}" ในแนวตั้งอาจแสดงผลไม่สมบูรณ์บางจุด`);
+          _lastVstyleWarnKey = warnKey;
+        }
+      } else {
+        _lastVstyleWarnKey = TL_ORIENT + ':' + name;
+      }
+
+      document.body.dataset.vstyle = name;
       const sel = document.getElementById('vstyle-select');
-      if (sel) sel.value = name || 'classic';
+      if (sel) sel.value = name;
       const toneGroup = document.getElementById('gradient-tone-group');
       if (toneGroup) toneGroup.style.display = (name === 'gradient') ? 'flex' : 'none';
       const iconGroup = document.getElementById('gradient-icon-group');
       if (iconGroup) iconGroup.style.display = (name === 'gradient') ? 'flex' : 'none';
       applyStaircaseLayout();
       recolorForVisualStyle();
+      alignVerticalStems(); /* ขนาดวงกลมเปลี่ยนตามสไตล์ → จัดก้านใหม่ */
+    }
+
+    /* ── จัดตำแหน่งก้าน (stem) แนวตั้งให้ชี้กลางวงกลมเสมอ ──
+       ขนาดวงกลมต่างกันตามสไตล์ (52px classic, 66px bold, 38px minimal ...)
+       การเดาด้วย CSS คงที่จึงหลุดตำแหน่ง — วัดจริงหลัง layout แทน */
+    function alignVerticalStems() {
+      /* อ่านจาก DOM แทนตัวแปร — ฟังก์ชันนี้ถูกเรียกตั้งแต่ boot (applyIconScale)
+         ก่อนบรรทัด let TL_ORIENT จะทำงาน (TDZ) */
+      if (document.body.dataset.orient !== 'v') return;
+      requestAnimationFrame(() => {
+        document.querySelectorAll('#root .vtl-item').forEach(item => {
+          const circle = item.querySelector('.ev-circle');
+          const stem = item.querySelector('.vtl-stem');
+          if (!circle || !stem) return;
+          let top = circle.offsetHeight / 2;
+          let el = circle;
+          while (el && el !== item) { top += el.offsetTop; el = el.offsetParent; }
+          stem.style.top = top + 'px';
+        });
+      });
+    }
+
+    /* ── Toast แจ้งเตือนชั่วคราว (กลางล่างจอ) ── */
+    let _toastTimer = null;
+    function showToast(msg, ms = 4200) {
+      const t = document.getElementById('app-toast');
+      if (!t) return;
+      t.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i><span>' + msg + '</span>';
+      t.classList.add('visible');
+      clearTimeout(_toastTimer);
+      _toastTimer = setTimeout(() => t.classList.remove('visible'), ms);
     }
 
     /* ── STAIRCASE layout: lifts each column's dot/bar-segment/content
@@ -5099,6 +5564,9 @@
           const s = gatherSettings();
           applyOrientation(e.target.value);
           s.orient = TL_ORIENT;
+          /* applyOrientation อาจสลับสไตล์ (บล็อกสไตล์แนวนอนล้วน / คืนสไตล์เดิม)
+             — อัปเดต snapshot ไม่ให้ restoreSettings ทับด้วยค่าก่อนสลับ */
+          s.vstyle = document.body.dataset.vstyle;
           renderTimeline();
           restoreSettings(s);
           scheduleSave();
@@ -5294,6 +5762,7 @@
     }
 
     async function exportPDF() {
+      if (REORDER_MODE) setReorderMode(false); /* กัน rotate จาก wiggle รบกวนการวัดตำแหน่ง */
       const btn = document.getElementById('btn-pdf');
       const origHTML = btn.innerHTML;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังสร้าง...';
