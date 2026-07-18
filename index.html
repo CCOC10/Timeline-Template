@@ -72,6 +72,8 @@
       --font-ui: 'IBM Plex Sans Thai', 'Sarabun', sans-serif;
       --font-body: 'IBM Plex Sans Thai', 'Sarabun', sans-serif;
       --font-heading: 'IBM Plex Sans Thai', 'Manrope', 'Sarabun', sans-serif;
+      /* ฟอนต์วันที่/เวลา — ค่าเริ่มต้นยึดตามฟอนต์หัวข้อ จนกว่าผู้ใช้เลือกแยก */
+      --font-date: var(--font-heading);
     }
 
     /* ── Dark mode — UI chrome only. The paper/document keeps its own
@@ -328,6 +330,9 @@
       gap: 4px;
       min-width: 195px;
       overflow: visible;
+      /* เมื่อคอลัมน์แคบกว่า min-width กล่องจะล้น — ต้องล้นแบบกึ่งกลางคอลัมน์
+         ไม่งั้นก้าน (กลางกล่อง) จะเหลื่อมจากหมุดบนเส้น (กลางคอลัมน์) */
+      justify-self: center;
     }
 
     .ev-cell-bot {
@@ -337,6 +342,7 @@
       gap: 4px;
       min-width: 195px;
       overflow: visible;
+      justify-self: center;
     }
 
     .tl-bar-bg {
@@ -550,7 +556,7 @@
     }
 
     .ev-date {
-      font-family: var(--font-heading);
+      font-family: var(--font-date);
       font-size: 1rem;
       font-weight: 700;
       text-align: center;
@@ -559,7 +565,7 @@
     }
 
     .ev-time {
-      font-family: var(--font-heading);
+      font-family: var(--font-date);
       font-size: 0.6875rem;
       font-weight: 500;
       text-align: center;
@@ -701,6 +707,80 @@
       white-space: nowrap;
     }
 
+    /* ══ Node wrapper + ไอคอนพิเศษ (badge) ══ */
+    .ev-node-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .ev-badge {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 23px;
+      height: 23px;
+      border-radius: 50%;
+      background: var(--surface-white, #fff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 5px rgba(25, 28, 30, 0.28);
+      z-index: 6;
+      font-size: 11px;
+      pointer-events: none;
+      /* เกาะมุมขวาบนของวงกลม และขยับตามขนาดไอคอน (--ev-icon-scale) */
+      transform: translate(-50%, -50%)
+        translate(calc(26px * var(--ev-icon-scale, 1) * 0.74),
+                  calc(-26px * var(--ev-icon-scale, 1) * 0.74));
+    }
+
+    /* ══ เมนูย่อยเลือกไอคอนพิเศษ ══ */
+    .ctx-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px 6px;
+      font-size: var(--fs-caption);
+      font-weight: 700;
+      color: var(--on-surface-var);
+    }
+
+    .ctx-title i { font-size: 0.65rem; color: #f6b100; }
+
+    .ctx-badge-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+      padding: 4px 8px 8px;
+    }
+
+    .ctx-badge-btn {
+      height: 42px;
+      border: 1px solid var(--outline);
+      border-radius: var(--radius-sm);
+      background: var(--surface-low);
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.12s, transform 0.1s, border-color 0.12s;
+    }
+
+    .ctx-badge-btn:hover {
+      background: var(--surface-mid);
+      transform: scale(1.08);
+    }
+
+    .ctx-badge-btn.active {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px var(--primary);
+      background: var(--primary-fixed);
+    }
+
     /* ══ Node = รูปภาพ (ใช้รูปแทนไอคอน) ══ */
     .ev-circle.img-node {
       overflow: hidden;
@@ -748,7 +828,8 @@
       display: grid;
       grid-template-columns: 1fr 110px 1fr;
       column-gap: 10px;
-      padding: 24px 0;
+      /* ระยะห่างแนวดิ่ง ปรับได้ด้วยปุ่ม "เส้น" บน top bar */
+      padding: var(--vtl-gap, 24px) 0;
     }
 
     /* เส้นแกนกลาง — หนึ่ง segment ต่อ event สีตามพาเลตต์ (คลาส tl-bar-seg
@@ -766,8 +847,8 @@
       z-index: 1;
     }
 
-    .vtl-item:first-child .vtl-seg { top: 24px; border-radius: 3px 3px 0 0; }
-    .vtl-item:last-child .vtl-seg { bottom: 24px; border-radius: 0 0 3px 3px; }
+    .vtl-item:first-child .vtl-seg { top: var(--vtl-gap, 24px); border-radius: 3px 3px 0 0; }
+    .vtl-item:last-child .vtl-seg { bottom: var(--vtl-gap, 24px); border-radius: 0 0 3px 3px; }
 
     /* ก้านเชื่อมจากเส้นกลางไปฝั่งเนื้อหา */
     .vtl-stem {
@@ -3165,6 +3246,42 @@
       </div>
     </div>
 
+    <div class="ctrl-group">
+      <span class="ctrl-label">ฟอนต์วันที่</span>
+      <div class="ctrl-row">
+        <select id="font-date-select" class="theme-select">
+          <option value="auto">ตามฟอนต์หัวข้อ (อัตโนมัติ)</option>
+          <option value="IBM Plex Sans Thai">IBM Plex Sans Thai</option>
+          <option value="Sarabun">Sarabun</option>
+          <option value="Noto Sans Thai">Noto Sans Thai</option>
+          <option value="Kanit">Kanit</option>
+          <option value="Mitr">Mitr</option>
+          <option value="Prompt">Prompt</option>
+          <option value="K2D">K2D</option>
+          <option value="Chakra Petch">Chakra Petch</option>
+          <option value="Bai Jamjuree">Bai Jamjuree</option>
+          <option value="Athiti">Athiti</option>
+          <option value="Niramit">Niramit</option>
+          <option value="Anuphan">Anuphan</option>
+          <option value="Taviraj">Taviraj (Serif)</option>
+          <option value="Trirong">Trirong (Serif)</option>
+          <option value="Pridi">Pridi (Serif)</option>
+          <option value="Itim">Itim (ลายมือ)</option>
+          <option value="Sriracha">Sriracha (ลายมือ)</option>
+          <option value="Charmonman">Charmonman (ลายมือ)</option>
+          <option value="Chonburi">Chonburi (ดิสเพลย์)</option>
+          <option value="Manrope">Manrope</option>
+          <option value="Inter">Inter</option>
+          <option value="Poppins">Poppins</option>
+          <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
+          <option value="Outfit">Outfit</option>
+          <option value="Space Grotesk">Space Grotesk</option>
+          <option value="DM Sans">DM Sans</option>
+          <option value="Raleway">Raleway</option>
+        </select>
+      </div>
+    </div>
+
       </div><!-- /cp-sec-body -->
     </details>
 
@@ -3446,6 +3563,9 @@
     function scheduleSave() {
       clearTimeout(_saveTimer);
       _saveTimer = setTimeout(() => saveState(), 500);
+      /* จุดรวมของทุกการแก้ไข — จัดแนวก้าน/วันที่ของโหมดแนวตั้งตามขนาดใหม่เสมอ
+         (เช่น ปรับขนาดฟอนต์วันที่/ข้อความ ที่ทำให้ตำแหน่งขยับ) */
+      if (typeof alignVerticalStems === 'function') alignVerticalStems();
     }
 
     async function saveState() {
@@ -3466,6 +3586,7 @@
             time: timeEl ? getEditableText(timeEl) : (ev.time || ''),
             desc: descEl ? getEditableText(descEl) : ev.desc,
             icon: ev.icon,
+            badge: ev.badge || '',
             imgs: ev.imgs ? [...ev.imgs] : (ev.img ? [ev.img] : []),
           };
         });
@@ -3497,6 +3618,7 @@
         gradientIconColor: GRADIENT_ICON_COLOR,
         fontBody:    fonts.body,
         fontHeading: fonts.heading,
+        fontDate:    DATE_FONT,
         theme: document.getElementById('theme-select')?.value || 'default',
         canvasSize: document.getElementById('canvas-size-select')?.value || 'auto',
         canvasBg: document.getElementById('canvas-bg-clr')?.value || '#ffffff',
@@ -3523,6 +3645,7 @@
         orient: TL_ORIENT,
         nodeMode: NODE_MODE,
         imgShape: IMG_SHAPE,
+        vtlGap: VTL_GAP,
       };
     }
 
@@ -3560,6 +3683,7 @@
         if (session.settings?.orient) applyOrientation(session.settings.orient);
         if (session.settings?.nodeMode) applyNodeMode(session.settings.nodeMode);
         if (session.settings?.imgShape) applyImgShape(session.settings.imgShape);
+        if (session.settings?.vtlGap) applyVtlGap(session.settings.vtlGap);
 
         document.querySelector('#page-title h1').textContent = session.title || 'Timeline';
         document.querySelector('#page-title p').textContent = session.subtitle || '';
@@ -3590,6 +3714,7 @@
       /* orientation / node mode ต้อง re-render ก่อน apply inline style อื่นๆ
          (ไม่งั้น element ที่ query ด้านล่างจะเป็นชุดเก่าที่ถูกแทนที่ไปแล้ว) */
       if (s.imgShape) applyImgShape(s.imgShape);
+      if (s.vtlGap && s.vtlGap !== VTL_GAP) applyVtlGap(s.vtlGap);
       const wantOrient = s.orient || 'h';
       const wantNode = s.nodeMode || 'icon';
       if (wantOrient !== TL_ORIENT || wantNode !== NODE_MODE) {
@@ -3612,7 +3737,7 @@
         if (gicInp) gicInp.value = s.gradientIconColor;
       }
       if (s.gradientIconMode) applyGradientIconMode(s.gradientIconMode);
-      if (s.fontBody || s.fontHeading) applyFont(s.fontBody, s.fontHeading);
+      if (s.fontBody || s.fontHeading || s.fontDate) applyFont(s.fontBody, s.fontHeading, s.fontDate);
       if (s.theme && palettes[s.theme]) {
         const themeSelect = document.getElementById('theme-select');
         if (themeSelect) themeSelect.value = s.theme;
@@ -4204,6 +4329,19 @@
     const TL_COL_MAX = 600;
     const TL_COL_STEP = 20;
 
+    /* ระยะห่างแนวดิ่งระหว่าง event ในโหมดแนวตั้ง (ปุ่ม "เส้น" เดียวกัน) */
+    let VTL_GAP = 24;
+    const VTL_GAP_MIN = 8;
+    const VTL_GAP_MAX = 140;
+    const VTL_GAP_STEP = 8;
+
+    function applyVtlGap(px) {
+      VTL_GAP = Math.max(VTL_GAP_MIN, Math.min(VTL_GAP_MAX, px));
+      document.documentElement.style.setProperty('--vtl-gap', VTL_GAP + 'px');
+      alignVerticalStems();
+      fitContentToCanvas();
+    }
+
     let TL_BAR_PX = 12; /* px height of the timeline bar */
     const TL_BAR_MIN = 2;
     const TL_BAR_MAX = 40;
@@ -4323,9 +4461,10 @@
       document.body.dataset.orient = TL_ORIENT;
       const sel = document.getElementById('orient-select');
       if (sel) sel.value = TL_ORIENT;
-      /* top-bar chips ที่มีผลเฉพาะแนวนอน (แถว / ความกว้างช่อง) */
+      /* top-bar chips: "แถว" มีผลเฉพาะแนวนอน — ส่วนปุ่ม "เส้น" ใช้ได้ทั้งคู่
+         (แนวนอน = ความกว้างช่อง, แนวตั้ง = ระยะห่างแนวดิ่งระหว่าง event) */
       const isV = TL_ORIENT === 'v';
-      ['rows-ctrl', 'rows-sep', 'spacing-ctrl'].forEach(id => {
+      ['rows-ctrl', 'rows-sep'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = isV ? 'none' : (id.endsWith('sep') ? '' : 'flex');
       });
@@ -4442,6 +4581,7 @@
         const c = document.querySelector(`[data-ev-idx="${evIdx}"] .ev-circle`);
         openPicker(evIdx, c || document.body);
       });
+      add('fa-star', 'ไอคอนพิเศษ', () => showBadgeMenu(x, y, evIdx));
       add('fa-image', 'เพิ่มรูปภาพ', () => { _imgReplaceIdx = -1; _openImgPicker(evIdx); });
       const clearIt = add('fa-broom', 'ล้างรูปทั้งหมดของ Event นี้', () => clearEventImages(evIdx));
       if (!hasImgs) clearIt.disabled = true;
@@ -4451,13 +4591,47 @@
       sep();
       add('fa-trash-can', 'ลบ Event นี้', () => deleteEvent(evIdx), 'ctx-danger');
 
-      /* แสดงก่อนวัดขนาด แล้ว clamp ไม่ให้ล้นขอบจอ */
+      _placeCtxMenu(x, y);
+    }
+
+    /* วางเมนู ณ ตำแหน่งเคอร์เซอร์ clamp ไม่ให้ล้นจอ */
+    function _placeCtxMenu(x, y) {
+      const menu = document.getElementById('ev-ctx-menu');
       menu.style.display = 'flex';
       menu.style.left = '0px';
       menu.style.top = '0px';
       const r = menu.getBoundingClientRect();
       menu.style.left = Math.max(8, Math.min(x, innerWidth - r.width - 8)) + 'px';
       menu.style.top = Math.max(8, Math.min(y, innerHeight - r.height - 8)) + 'px';
+    }
+
+    /* เมนูย่อย: เลือกไอคอนพิเศษ */
+    function showBadgeMenu(x, y, evIdx) {
+      const menu = document.getElementById('ev-ctx-menu');
+      if (!menu) return;
+      menu.innerHTML = '<div class="ctx-title"><i class="fa-solid fa-star"></i> ไอคอนพิเศษของ Event นี้</div>';
+
+      const grid = document.createElement('div');
+      grid.className = 'ctx-badge-grid';
+      const cur = allEvents[evIdx]?.badge || '';
+      EV_BADGES.forEach(([icon, label, color]) => {
+        const b = document.createElement('button');
+        b.className = 'ctx-badge-btn' + (icon === cur ? ' active' : '');
+        b.title = label;
+        b.innerHTML = `<i class="fa-solid ${icon}" style="color:${color}"></i>`;
+        b.addEventListener('click', () => { hideEventContextMenu(); setEventBadge(evIdx, icon); });
+        grid.appendChild(b);
+      });
+      menu.appendChild(grid);
+
+      const clr = document.createElement('button');
+      clr.className = 'ctx-item';
+      clr.innerHTML = '<i class="fa-solid fa-eraser"></i><span>เอาไอคอนพิเศษออก</span>';
+      if (!cur) clr.disabled = true;
+      clr.addEventListener('click', () => { hideEventContextMenu(); setEventBadge(evIdx, null); });
+      menu.appendChild(clr);
+
+      _placeCtxMenu(x, y);
     }
 
     document.addEventListener('contextmenu', (e) => {
@@ -4535,6 +4709,48 @@
         circle.appendChild(ico);
       }
       return { circle, useImgNode };
+    }
+
+    /* ── ไอคอนพิเศษ (badge) ติดมุมขวาบนของวงกลม เช่น ดาว มงกุฎ ── */
+    const EV_BADGES = [
+      ['fa-star', 'ดาว', '#f6b100'],
+      ['fa-crown', 'มงกุฎ', '#e79f00'],
+      ['fa-fire', 'ไฟ', '#ff5722'],
+      ['fa-heart', 'หัวใจ', '#e91e63'],
+      ['fa-circle-check', 'สำเร็จ', '#34a853'],
+      ['fa-circle-exclamation', 'สำคัญ', '#ea4335'],
+      ['fa-thumbtack', 'ปักหมุด', '#5f6368'],
+      ['fa-bolt', 'สายฟ้า', '#7c3aed'],
+    ];
+
+    function makeEventBadge(ev) {
+      if (!ev.badge) return null;
+      const meta = EV_BADGES.find(b => b[0] === ev.badge);
+      const el = document.createElement('span');
+      el.className = 'ev-badge';
+      el.title = meta ? meta[1] : '';
+      el.innerHTML = `<i class="fa-solid ${ev.badge}" style="color:${meta ? meta[2] : '#f6b100'}"></i>`;
+      return el;
+    }
+
+    /* วงกลม + badge รวมใน wrapper เดียว ใช้ทั้งแนวนอนและแนวตั้ง */
+    function buildEventNode(ev, evIdx, col, evImgsAll) {
+      const { circle, useImgNode } = buildEventCircle(ev, evIdx, col, evImgsAll);
+      const wrap = document.createElement('div');
+      wrap.className = 'ev-node-wrap';
+      wrap.appendChild(circle);
+      const badge = makeEventBadge(ev);
+      if (badge) wrap.appendChild(badge);
+      return { wrap, circle, useImgNode };
+    }
+
+    function setEventBadge(evIdx, icon) {
+      pushUndo();
+      allEvents[evIdx] = { ...allEvents[evIdx], badge: icon || '' };
+      const s = gatherSettings();
+      renderTimeline();
+      restoreSettings(s);
+      scheduleSave();
     }
 
     let _imgFileInput = null;
@@ -4656,7 +4872,7 @@
           const evIdx = r * COLS + i;
           /* migrate legacy ev.img → ev.imgs */
           const evImgsAll = ev.imgs ? ev.imgs : (ev.img ? [ev.img] : []);
-          const { circle, useImgNode } = buildEventCircle(ev, evIdx, col, evImgsAll);
+          const { wrap: circleWrap, useImgNode } = buildEventNode(ev, evIdx, col, evImgsAll);
 
           const dateEl = document.createElement('div');
           dateEl.className = 'ev-date';
@@ -4711,7 +4927,10 @@
             pushUndo();
             const s = gatherSettings();
             const moved = allEvents.splice(dragSrcIdx, 1)[0];
-            const target = dragSrcIdx < evIdx ? evIdx - 1 : evIdx;
+            /* วางที่ index เป้าหมายตรงๆ หลังจากดึงตัวที่ลากออกแล้ว —
+             ใช้ได้ถูกต้องทั้งลากไปข้างหน้าและถอยหลัง (สูตรเดิม evIdx-1
+             ทำให้ลากไปข้างหน้าตกก่อนเป้า 1 ช่อง และลากไปช่องติดกันไม่ขยับเลย) */
+          const target = evIdx;
             allEvents.splice(target, 0, moved);
             dragSrcIdx = null;
             renderTimeline();
@@ -4728,7 +4947,7 @@
 
           cell.appendChild(delBtn);
           cell.appendChild(stem);
-          cell.appendChild(circle);
+          cell.appendChild(circleWrap);
           cell.appendChild(dateEl);
           cell.appendChild(timeEl);
           cell.appendChild(descEl);
@@ -4868,10 +5087,10 @@
         item.appendChild(stem);
 
         const evImgsAll = ev.imgs ? ev.imgs : (ev.img ? [ev.img] : []);
-        const { circle, useImgNode } = buildEventCircle(ev, evIdx, col, evImgsAll);
+        const { wrap: circleWrap, useImgNode } = buildEventNode(ev, evIdx, col, evImgsAll);
         const node = document.createElement('div');
         node.className = 'vtl-node';
-        node.appendChild(circle);
+        node.appendChild(circleWrap);
         item.appendChild(node);
 
         const content = document.createElement('div');
@@ -4940,7 +5159,10 @@
           pushUndo();
           const s = gatherSettings();
           const moved = allEvents.splice(dragSrcIdx, 1)[0];
-          const target = dragSrcIdx < evIdx ? evIdx - 1 : evIdx;
+          /* วางที่ index เป้าหมายตรงๆ หลังจากดึงตัวที่ลากออกแล้ว —
+             ใช้ได้ถูกต้องทั้งลากไปข้างหน้าและถอยหลัง (สูตรเดิม evIdx-1
+             ทำให้ลากไปข้างหน้าตกก่อนเป้า 1 ช่อง และลากไปช่องติดกันไม่ขยับเลย) */
+          const target = evIdx;
           allEvents.splice(target, 0, moved);
           dragSrcIdx = null;
           renderTimeline();
@@ -5173,11 +5395,41 @@
         document.querySelectorAll('#root .vtl-item').forEach(item => {
           const circle = item.querySelector('.ev-circle');
           const stem = item.querySelector('.vtl-stem');
+          const content = item.querySelector('.vtl-content');
+          const date = item.querySelector('.ev-date');
           if (!circle || !stem) return;
-          let top = circle.offsetHeight / 2;
-          let el = circle;
-          while (el && el !== item) { top += el.offsetTop; el = el.offsetParent; }
-          stem.style.top = top + 'px';
+
+          /* ตำแหน่งกึ่งกลาง (แกน y) ของ element เทียบกับ .vtl-item */
+          const centerOf = (el) => {
+            let t = el.offsetHeight / 2, n = el;
+            while (n && n !== item) { t += n.offsetTop; n = n.offsetParent; }
+            return t;
+          };
+
+          /* 1) ขยับบล็อกเนื้อหาให้ "กึ่งกลางวันที่" ตรงกับกึ่งกลางวงกลมพอดี
+             (reset ก่อนวัด กันค่าเดิมสะสม) */
+          if (content && date) {
+            content.style.marginTop = '';
+            const delta = centerOf(circle) - centerOf(date);
+            if (Math.abs(delta) > 0.5) content.style.marginTop = delta + 'px';
+          }
+
+          /* 2) ก้านอยู่ระดับกึ่งกลางวงกลม (= ระดับวันที่แล้ว) */
+          const cc = centerOf(circle);
+          stem.style.top = cc + 'px';
+
+          /* 3) ความยาวก้าน: จากเส้นกลางลากไปจนเกือบแตะ "ตัวข้อความวันที่"
+             (เว้น 6px) — วัดจากขอบข้อความจริง ไม่ใช่ขอบบล็อกเนื้อหา
+             เพราะวันที่แคบกว่า desc และถูกจัดกึ่งกลาง เส้นจะได้ไม่ขาดกลางทาง */
+          if (date) {
+            const center = item.clientWidth / 2;
+            const isLeft = item.classList.contains('vtl-left');
+            let dateLeft = 0, n2 = date;
+            while (n2 && n2 !== item) { dateLeft += n2.offsetLeft; n2 = n2.offsetParent; }
+            const dateRight = dateLeft + date.offsetWidth;
+            const gap = isLeft ? center - dateRight : dateLeft - center;
+            stem.style.width = Math.max(24, gap - 6) + 'px';
+          }
         });
       });
     }
@@ -5274,7 +5526,9 @@
       document.head.appendChild(link);
     }
 
-    function applyFont(bodyFont, headingFont) {
+    let DATE_FONT = 'auto'; /* 'auto' = ยึดตามฟอนต์หัวข้อ */
+
+    function applyFont(bodyFont, headingFont, dateFont) {
       const root = document.documentElement.style;
 
       if (bodyFont) {
@@ -5289,6 +5543,19 @@
         root.setProperty('--font-heading', `'${headingFont}', 'IBM Plex Sans Thai', 'Sarabun', sans-serif`);
         const sel = document.getElementById('font-heading-select');
         if (sel) sel.value = headingFont;
+      }
+
+      if (dateFont) {
+        DATE_FONT = dateFont;
+        const sel = document.getElementById('font-date-select');
+        if (sel) sel.value = dateFont;
+        if (dateFont === 'auto') {
+          /* กลับไปตาม :root (--font-date: var(--font-heading)) */
+          root.removeProperty('--font-date');
+        } else {
+          loadGoogleFont(dateFont, fontCatalog[dateFont]);
+          root.setProperty('--font-date', `'${dateFont}', 'IBM Plex Sans Thai', 'Sarabun', sans-serif`);
+        }
       }
     }
 
@@ -5528,12 +5795,14 @@
       const spacingDn = document.getElementById('spacing-dn');
       const spacingUp = document.getElementById('spacing-up');
       if (spacingDn) spacingDn.onclick = () => {
+        if (TL_ORIENT === 'v') { applyVtlGap(VTL_GAP - VTL_GAP_STEP); scheduleSave(); return; }
         syncEventsFromDOM();
         TL_COL_PX = Math.max(TL_COL_MIN, TL_COL_PX - TL_COL_STEP);
         renderTimeline();
         scheduleSave();
       };
       if (spacingUp) spacingUp.onclick = () => {
+        if (TL_ORIENT === 'v') { applyVtlGap(VTL_GAP + VTL_GAP_STEP); scheduleSave(); return; }
         syncEventsFromDOM();
         TL_COL_PX = Math.min(TL_COL_MAX, TL_COL_PX + TL_COL_STEP);
         renderTimeline();
@@ -5625,6 +5894,10 @@
       const fontHeadingSel = document.getElementById('font-heading-select');
       if (fontHeadingSel) {
         fontHeadingSel.onchange = (e) => { applyFont(null, e.target.value); scheduleSave(); };
+      }
+      const fontDateSel = document.getElementById('font-date-select');
+      if (fontDateSel) {
+        fontDateSel.onchange = (e) => { applyFont(null, null, e.target.value); scheduleSave(); };
       }
 
       /* Theme picker */
@@ -6138,6 +6411,28 @@
           }
         });
 
+        /* ไอคอนพิเศษ (badge) — วงกลมขาว + ไอคอน FA สีตามชนิด วาดทับวงกลม event */
+        rEl.querySelectorAll('.ev-badge').forEach(el => {
+          const a = abr(el);
+          const r = M(a.w / 2);
+          if (r < 0.1) return;
+          const cx = X(a.l + a.w / 2);
+          const cy = Y(a.t + a.h / 2);
+          pdf.setFillColor(...cssRGB(getComputedStyle(el).backgroundColor));
+          pdf.circle(cx, cy, r, 'F');
+          const ico = el.querySelector('i');
+          if (ico) {
+            const content = getComputedStyle(ico, '::before').content;
+            if (content && content !== 'none' && content !== 'normal') {
+              const icoFsPt = parseFloat(getComputedStyle(ico).fontSize) * effectiveSF * 0.75;
+              pdf.setFont('FA', 'normal');
+              pdf.setFontSize(icoFsPt);
+              pdf.setTextColor(...cssRGB(getComputedStyle(ico).color));
+              pdf.text(content.replace(/['"]/g, ''), cx, cy + r * 0.35, { align: 'center' });
+            }
+          }
+        });
+
         /* Dates + Times */
         rEl.querySelectorAll('.ev-date').forEach(el => drawEl(el, 'bold'));
         rEl.querySelectorAll('.ev-time').forEach(el => { if (el.textContent.trim()) drawEl(el, 'normal'); });
@@ -6228,6 +6523,7 @@
           time: timeEl ? getEditableText(timeEl) : (ev.time || ''),
           desc: descEl ? getEditableText(descEl) : ev.desc,
           icon: ev.icon,
+          badge: ev.badge || '',
           imgs: ev.imgs ? [...ev.imgs] : (ev.img ? [ev.img] : []),
         };
       });
@@ -6336,6 +6632,7 @@
           time: timeEl ? getEditableText(timeEl) : (ev.time || ''),
           desc: descEl ? getEditableText(descEl) : ev.desc,
           icon: ev.icon,
+          badge: ev.badge || '',
           imgs: ev.imgs ? [...ev.imgs] : (ev.img ? [ev.img] : []),
         };
       });
