@@ -2915,15 +2915,12 @@
       <i class="fa-solid fa-moon"></i>
     </button>
     <div class="tb-spacer"></div>
-    <select id="canvas-size-select" title="ขนาด Canvas / PDF">
-      <option value="auto">Auto (ตามเนื้อหา)</option>
-      <option value="a4l" selected>A4 Landscape</option>
-      <option value="a4p">A4 Portrait</option>
-      <option value="a3l">A3 Landscape</option>
-      <option value="a3p">A3 Portrait</option>
-      <option value="a5l">A5 Landscape</option>
-      <option value="letterl">Letter Landscape</option>
-    </select>
+    <button class="tb-btn tb-icon-only" id="btn-zoomfit" title="ซูมพอดีจอ — เห็นทั้ง Timeline" onclick="zoomToFit()">
+      <i class="fa-solid fa-arrows-to-dot"></i>
+    </button>
+    <button class="tb-btn" id="btn-template" title="ดาวน์โหลดเทมเพลต Excel สำหรับกรอกข้อมูล" onclick="downloadTemplate()">
+      <i class="fa-solid fa-file-excel"></i> เทมเพลต
+    </button>
     <div class="tb-sep"></div>
     <button class="tb-btn tb-pdf" onclick="exportPDF()">
       <i class="fa-solid fa-file-pdf"></i> PDF
@@ -6044,6 +6041,53 @@
       return m ? [+m[1], +m[2], +m[3]] : [0, 0, 0];
     }
 
+    /* ── จัดกึ่งกลางไอคอน FontAwesome ในวงกลม (PDF) ──
+       pdf.text วาง "เส้นฐาน (baseline)" ที่ y ที่ให้ — แต่ glyph ของแต่ละ
+       ไอคอนสูง/ต่ำจากเส้นฐานไม่เท่ากัน (bullseye, crown, ...) การ offset ด้วย
+       ค่าคงที่อิงรัศมีวงกลม (r*0.35) จึงทำให้บางไอคอนลอยสูง/ต่ำ ไม่สมมาตร
+       วิธีถูก: วัด bounding box จริงของ glyph แล้วเลื่อนเส้นฐานให้ "จุดกึ่งกลาง
+       glyph" ตรงกับจุดกึ่งกลางวงกลมพอดี ทุกไอคอน ทุกขนาด */
+    let _faMeasureCtx = null;
+    const _faOffsetCache = new Map();
+    function faGlyphYOffsetMM(glyph, fontSizePt) {
+      const fontSizeMM = fontSizePt * 25.4 / 72;
+      let emFrac = _faOffsetCache.get(glyph);
+      if (emFrac === undefined) {
+        try {
+          if (!_faMeasureCtx) _faMeasureCtx = document.createElement('canvas').getContext('2d');
+          const MP = 200;
+          _faMeasureCtx.font = `900 ${MP}px "Font Awesome 6 Free"`;
+          _faMeasureCtx.textBaseline = 'alphabetic';
+          const m = _faMeasureCtx.measureText(glyph);
+          const asc = m.actualBoundingBoxAscent || 0;
+          const desc = m.actualBoundingBoxDescent || 0;
+          /* จุดกึ่งกลาง glyph อยู่เหนือเส้นฐานเป็นสัดส่วน (asc-desc)/2 ต่อ em */
+          emFrac = (asc + desc > 0) ? (asc - desc) / 2 / MP : 0.35;
+        } catch (e) {
+          emFrac = 0.35; /* fallback = พฤติกรรมเดิม */
+        }
+        _faOffsetCache.set(glyph, emFrac);
+      }
+      /* pdf y เพิ่มลงล่าง → เลื่อนเส้นฐานลงจากจุดกึ่งกลางเท่ากับครึ่งความสูง glyph */
+      return emFrac * fontSizeMM;
+    }
+
+    /* ── ซูมพอดีจอ: เห็นทั้ง Timeline ในคลิกเดียว ── */
+    function zoomToFit() {
+      const wrap = document.getElementById('canvas-wrap');
+      const viewport = document.getElementById('canvas-viewport');
+      if (!wrap || !viewport) return;
+      const w = wrap.offsetWidth, h = wrap.offsetHeight;
+      if (!w || !h) return;
+      const z = Math.min((viewport.clientWidth - 70) / w, (viewport.clientHeight - 70) / h);
+      applyZoom(Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z)));
+      requestAnimationFrame(() => {
+        viewport.scrollLeft = (viewport.scrollWidth - viewport.clientWidth) / 2;
+        viewport.scrollTop = 0;
+      });
+      scheduleSave();
+    }
+
     async function exportPDF() {
       if (REORDER_MODE) setReorderMode(false); /* กัน rotate จาก wiggle รบกวนการวัดตำแหน่ง */
       const btn = document.getElementById('btn-pdf');
@@ -6363,7 +6407,17 @@
           pdf.rect(X(a.l), Y(a.t), Math.max(M(a.w), 0.3), Math.max(M(a.h), 0.3), 'F');
         });
 
-        /* Dots on bar */
+        /* Stems — วาดก่อน dot เพื่อให้ลำดับซ้อนตรงกับหน้าจอ
+           (บนจอ dot z-index:5 อยู่เหนือก้าน z-index:2 → dot บังรอยต่อก้าน)
+           ถ้าวาดก้านหลัง dot เส้นก้านจะพาดทับหน้า dot = เส้นทับกันแปลกๆ */
+        rEl.querySelectorAll('.ev-stem').forEach(el => {
+          const a = abr(el);
+          if (!a.h) return;
+          pdf.setFillColor(...cssRGB(getComputedStyle(el).backgroundColor));
+          pdf.rect(X(a.l), Y(a.t), Math.max(M(a.w), 0.4), M(a.h), 'F');
+        });
+
+        /* Dots on bar — วาดทับก้าน เหมือนบนจอ */
         rEl.querySelectorAll('.ev-dot').forEach(el => {
           const a = abr(el);
           const r = M(a.w / 2);
@@ -6372,14 +6426,6 @@
           pdf.setDrawColor(...cssRGB(getComputedStyle(el).borderColor));
           pdf.setLineWidth(M(2.5));
           pdf.circle(X(a.l + a.w / 2), Y(a.t + a.h / 2), r, 'FD');
-        });
-
-        /* Stems */
-        rEl.querySelectorAll('.ev-stem').forEach(el => {
-          const a = abr(el);
-          if (!a.h) return;
-          pdf.setFillColor(...cssRGB(getComputedStyle(el).backgroundColor));
-          pdf.rect(X(a.l), Y(a.t), Math.max(M(a.w), 0.4), M(a.h), 'F');
         });
 
         /* Circles + FontAwesome icons (หรือรูปภาพ เมื่อใช้รูปแทนไอคอน) */
@@ -6403,10 +6449,14 @@
             if (content && content !== 'none' && content !== 'normal') {
               /* Use the icon's actual computed font size for accuracy */
               const icoFsPt = parseFloat(getComputedStyle(ico).fontSize) * effectiveSF * 0.75;
+              const glyph = content.replace(/['"]/g, '');
               pdf.setFont('FA', 'normal');
               pdf.setFontSize(icoFsPt);
               pdf.setTextColor(255, 255, 255);
-              pdf.text(content.replace(/['"]/g, ''), cx, cy + r * 0.35, { align: 'center' });
+              /* วัด bounding box ของ glyph จริง แล้ววางกึ่งกลาง — แม่นกว่า
+                 baseline:'middle' ที่อิงเมตริกทั้งฟอนต์ (ไอคอนอย่าง bullseye
+                 ยังเยื้องได้) และแม่นกว่า offset คงที่ r*0.35 */
+              pdf.text(glyph, cx, cy + faGlyphYOffsetMM(glyph, icoFsPt), { align: 'center' });
             }
           }
         });
@@ -6425,10 +6475,11 @@
             const content = getComputedStyle(ico, '::before').content;
             if (content && content !== 'none' && content !== 'normal') {
               const icoFsPt = parseFloat(getComputedStyle(ico).fontSize) * effectiveSF * 0.75;
+              const glyph = content.replace(/['"]/g, '');
               pdf.setFont('FA', 'normal');
               pdf.setFontSize(icoFsPt);
               pdf.setTextColor(...cssRGB(getComputedStyle(ico).color));
-              pdf.text(content.replace(/['"]/g, ''), cx, cy + r * 0.35, { align: 'center' });
+              pdf.text(glyph, cx, cy + faGlyphYOffsetMM(glyph, icoFsPt), { align: 'center' });
             }
           }
         });
@@ -6705,8 +6756,10 @@
     };
 
     function getCanvasSize() {
+      /* ตัวเลือกขนาดกระดาษถูกถอดออกจาก UI แล้ว — ใช้ Auto (ตามเนื้อหา) เสมอ
+         ทั้งแคนวาสและ PDF จึงตรงกับที่เห็นบนจอ 100% */
       const sel = document.getElementById('canvas-size-select');
-      return canvasSizes[sel ? sel.value : 'a4l'] || canvasSizes.a4l;
+      return canvasSizes[sel ? sel.value : 'auto'] || canvasSizes.auto;
     }
 
     /* ═══════════════════════════════════════════════════
