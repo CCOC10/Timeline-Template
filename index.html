@@ -3135,6 +3135,10 @@
       <span class="ctrl-label">ธีมสี (Theme)</span>
       <div class="ctrl-row">
         <select id="theme-select" class="theme-select">
+          <optgroup label="สีเดียว (Solid)">
+            <option value="solidblack">ดำล้วน (Pure Black)</option>
+            <option value="solidcustom">สีเดียว (กำหนดเอง)</option>
+          </optgroup>
           <optgroup label="โมเดิร์น">
             <option value="navygold">กรม-ทอง (Navy Gold)</option>
             <option value="nordic">นอร์ดิก (Nordic)</option>
@@ -3155,6 +3159,10 @@
             <option value="autumn">ใบไม้ร่วง (Autumn)</option>
           </optgroup>
         </select>
+      </div>
+      <div class="ctrl-row" id="solid-color-group" style="display:none; margin-top:8px;">
+        <span class="ctrl-label" style="margin:0;">เลือกสี</span>
+        <input type="color" id="solid-color-clr" value="#1a73e8" title="เลือกสีเดียวสำหรับทั้งชิ้นงาน">
       </div>
       <div id="palette-preview" title="สีของธีมที่เลือก"></div>
     </div>
@@ -3617,6 +3625,7 @@
         fontHeading: fonts.heading,
         fontDate:    DATE_FONT,
         theme: document.getElementById('theme-select')?.value || 'default',
+        solidColor: SOLID_COLOR,
         canvasSize: document.getElementById('canvas-size-select')?.value || 'auto',
         canvasBg: document.getElementById('canvas-bg-clr')?.value || '#ffffff',
         descFS: document.querySelector('.ev-desc')?.style.fontSize || '',
@@ -3690,6 +3699,10 @@
         document.getElementById('page-title').style.display = 'block';
         showAppUI();
 
+        if (session.settings && session.settings.solidColor) {
+          SOLID_COLOR = session.settings.solidColor;
+          palettes.solidcustom = makeSolid(SOLID_COLOR);
+        }
         if (session.settings && session.settings.theme && palettes[session.settings.theme]) {
           palette = palettes[session.settings.theme];
         }
@@ -3735,9 +3748,17 @@
       }
       if (s.gradientIconMode) applyGradientIconMode(s.gradientIconMode);
       if (s.fontBody || s.fontHeading || s.fontDate) applyFont(s.fontBody, s.fontHeading, s.fontDate);
+      if (s.solidColor) {
+        SOLID_COLOR = s.solidColor;
+        palettes.solidcustom = makeSolid(SOLID_COLOR);
+        const solidInp = document.getElementById('solid-color-clr');
+        if (solidInp) solidInp.value = SOLID_COLOR;
+      }
       if (s.theme && palettes[s.theme]) {
         const themeSelect = document.getElementById('theme-select');
         if (themeSelect) themeSelect.value = s.theme;
+        const solidGroup = document.getElementById('solid-color-group');
+        if (solidGroup) solidGroup.style.display = (s.theme === 'solidcustom') ? 'flex' : 'none';
         updatePalettePreview();
       }
       if (s.canvasSize) {
@@ -3871,7 +3892,13 @@
     /* ══════════════════════════════════════════════════ */
 
     /* ── Color palette ── */
+    /* ── สีเดียวทั้งชิ้นงาน (solid single-color themes) ── */
+    let SOLID_COLOR = '#1a73e8';
+    const makeSolid = (hex) => Array(10).fill(hex);
+
     const palettes = {
+      solidblack: makeSolid('#000000'),
+      solidcustom: makeSolid(SOLID_COLOR),
       default: [
         "#4A90D9", "#4BC5A2", "#7BC942", "#F5C842", "#E85B5B",
         "#3D4E6B", "#9B59B6", "#E67E22", "#1ABC9C", "#C0392B"
@@ -5899,14 +5926,39 @@
 
       /* Theme picker */
       const themeSelect = document.getElementById('theme-select');
+      const solidColorGroup = document.getElementById('solid-color-group');
+      const solidColorInp = document.getElementById('solid-color-clr');
+
+      function toggleSolidColorUI(themeVal) {
+        if (solidColorGroup) solidColorGroup.style.display = (themeVal === 'solidcustom') ? 'flex' : 'none';
+      }
+
       if (themeSelect) {
         themeSelect.onchange = (e) => {
           syncEventsFromDOM();
           const currentSettings = gatherSettings();
+          if (e.target.value === 'solidcustom') palettes.solidcustom = makeSolid(SOLID_COLOR);
           palette = palettes[e.target.value] || palettes.default;
           renderTimeline();
           restoreSettings(currentSettings);
           updatePalettePreview();
+          toggleSolidColorUI(e.target.value);
+          scheduleSave();
+        };
+      }
+
+      if (solidColorInp) {
+        solidColorInp.oninput = (e) => {
+          SOLID_COLOR = e.target.value;
+          palettes.solidcustom = makeSolid(SOLID_COLOR);
+          if (themeSelect && themeSelect.value === 'solidcustom') {
+            syncEventsFromDOM();
+            const currentSettings = gatherSettings();
+            palette = palettes.solidcustom;
+            renderTimeline();
+            restoreSettings(currentSettings);
+            updatePalettePreview();
+          }
           scheduleSave();
         };
       }
@@ -6623,6 +6675,10 @@
           document.getElementById('page-title').style.display = 'block';
           showAppUI();
 
+          if (project.settings && project.settings.solidColor) {
+            SOLID_COLOR = project.settings.solidColor;
+            palettes.solidcustom = makeSolid(SOLID_COLOR);
+          }
           if (project.settings && project.settings.theme && palettes[project.settings.theme]) {
             palette = palettes[project.settings.theme];
           }
@@ -6711,6 +6767,10 @@
       document.querySelector('#page-title h1').textContent = snap.title || 'Timeline';
       document.querySelector('#page-title p').textContent = snap.subtitle || '';
       document.querySelector('#page-title p.sub2').textContent = snap.subtitle2 || '';
+      if (snap.settings && snap.settings.solidColor) {
+        SOLID_COLOR = snap.settings.solidColor;
+        palettes.solidcustom = makeSolid(SOLID_COLOR);
+      }
       if (snap.settings && snap.settings.theme && palettes[snap.settings.theme]) {
         palette = palettes[snap.settings.theme];
       }
